@@ -1,6 +1,6 @@
 {
-    "name": "baikal-storage-plugin",
-    "description": "ABaikal plugin to sync iCal objects into storages such as taskwarrior and todist",
+    "name": "aerex/baikal-storage-plugin",
+    "description": "A Baikal plugin to sync iCal objects into storages such as taskwarrior and todist",
     "type": "library",
     "keywords": [
         "task",
@@ -23,10 +23,12 @@
         "nesbot/carbon": "^2.0.0",
         "laminas/laminas-validator": "^2.13",
         "laminas/laminas-stdlib": "^3.2",
-        "psr/container": "^1.0"
+        "psr/container": "^1.0",
+        "symfony/config": "^5.0",
+        "symfony/process": "^3.4"
     },
     "require-dev": {
-        "phpunit/phpunit": "> 4.8, <=6.0.0"
+        "phpunit/phpunit": "^7.4"
     },
     "authors": [
         {
@@ -36,7 +38,9 @@
     ],
     "autoload": {
         "psr-4": {
-            "Aerex\\Taskwarrior\\": "src/taskwarrior"
+            "Aerex\\BaikalStorage\\Storages\\": "lib/Storages/",
+            "Aerex\\BaikalStorage\\Configs\\": "lib/Configs/",
+            "Aerex\\BaikalStorage\\": "lib/"
         }
     }
 }
