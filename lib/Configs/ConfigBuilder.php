@@ -9,12 +9,26 @@ use Symfony\Component\Yaml\Yaml;
 
 class ConfigBuilder implements ConfigurationInterface {
   private $configs = [];
-  private $configFile;
+  private $configDir;
 
-  public function __construct($configFile = '~/.config/baikal') {
-    $this->configFile = $configFile;
+  public function __construct($configDir = null) {
+    if (!isset($configDir)) {
+      $this->configDir = $this->getHomeDir() .  '~/.config/baikal';
+    } else {
+      $this->configDir = $configDir;
+    }
     $this->processor = new Processor();
   }
+
+  private function getHomeDir() {
+    if (stristr(PHP_OS, 'WIN')) {
+      return rtrim($_SERVER['HOMEDRIVE'] . $_SERVER['HOMEPATH'], '\\/');
+    } else {
+      return rtrim($_SERVER['HOME'], '/');
+    }
+
+  }
+  
 
   public function add($config) {
     $this->configs[] = $config;
@@ -32,10 +46,10 @@ class ConfigBuilder implements ConfigurationInterface {
   }
 
   public function readContent() {
-    if (!is_dir($this->configFile)) {
-      mkdir($this->configFile);
+    if (!is_dir($this->configDir)) {
+      mkdir($this->configDir, 0755, true);
     }
-    $contents = sprintf('%s/storage.yml', $this->configFile);
+    $contents = sprintf('%s/storage.yml', $this->configDir);
     return file_get_contents($contents);
   }
 
