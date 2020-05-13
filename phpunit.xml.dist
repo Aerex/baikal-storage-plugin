@@ -9,7 +9,7 @@
 
 
 <testsuite name="Baikal Storage Plug Tests">
-  <directory>./lib/tests</directory>
+  <directory>./lib/tests/</directory>
 </testsuite>
 
 <filter>

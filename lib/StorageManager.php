@@ -3,7 +3,6 @@
 namespace Aerex\BaikalStorage;
 
 use Sabre\VObject\Component\VCalendar as Calendar;
-use Aerex\BaikalStorage\Configs\ConfigBuilder;
 
 class StorageManager {
 
@@ -15,13 +14,12 @@ class StorageManager {
     
 
   /**
-   * @var Config
+   * @var array()
    */
-  private $configBuilder;
   private $configs;
 
-  public function __construct($configBuilder){
-    $this->configBuilder = $configBuilder; 
+  public function __construct($configs){
+    $this->configs = $configs; 
   }
 
   public function getStorages() {
@@ -33,12 +31,7 @@ class StorageManager {
   }
 
   public function addStorage($name, $storage) {
-    $this->configBuilder->add($storage->getConfig());
    $this->storages[$name] = $storage; 
-  }
-
-  public function init() {
-    $this->configs = $this->configBuilder->loadYaml();
   }
 
   public function import(Calendar $calendar) {
@@ -50,7 +43,6 @@ class StorageManager {
       if (!isset($storage)){
         throw new \Exception();
       }
-      $storage->setRawConfigs($this->configs[$key]);
       $storage->save($calendar);
     }
   }

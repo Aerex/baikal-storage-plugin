@@ -11,32 +11,18 @@ class ConfigBuilder implements ConfigurationInterface {
   private $configs = [];
   private $configDir;
 
-  public function __construct($configDir = null) {
-    if (!isset($configDir)) {
-      $this->configDir = $this->getHomeDir() .  '~/.config/baikal';
-    } else {
-      $this->configDir = $configDir;
-    }
+  public function __construct($configDir) {
+    $this->configDir = $configDir;
     $this->processor = new Processor();
   }
-
-  private function getHomeDir() {
-    if (stristr(PHP_OS, 'WIN')) {
-      return rtrim($_SERVER['HOMEDRIVE'] . $_SERVER['HOMEPATH'], '\\/');
-    } else {
-      return rtrim($_SERVER['HOME'], '/');
-    }
-
-  }
-  
 
   public function add($config) {
     $this->configs[] = $config;
   }
 
   public function getConfigTreeBuilder() {
-    $treeBuilder = new TreeBuilder('configs');
-    $rootNode = $treeBuilder->getRootNode();
+    $treeBuilder = new TreeBuilder();
+    $rootNode = $treeBuilder->root('configs');
     $ref = $rootNode->children();
     foreach ($this->configs as $config) {
       $ref = $ref->append($config->get());
@@ -46,10 +32,7 @@ class ConfigBuilder implements ConfigurationInterface {
   }
 
   public function readContent() {
-    if (!is_dir($this->configDir)) {
-      mkdir($this->configDir, 0755, true);
-    }
-    $contents = sprintf('%s/storage.yml', $this->configDir);
+    $contents = sprintf('%s/storage.yaml', $this->configDir);
     return file_get_contents($contents);
   }
 

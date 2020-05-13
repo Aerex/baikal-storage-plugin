@@ -8,5 +8,4 @@ interface IStorage {
  public function save(Calendar $c);
  public function refresh();
  public function getConfig();
- public function setRawConfigs($rawConfigs);
 }

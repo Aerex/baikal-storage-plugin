@@ -31,11 +31,6 @@ class Plugin extends ServerPlugin {
      */
     protected $storageManager;
 
-    /**
-     * @var ConfigBuilder
-     */
-
-    protected $config;
     
     /**
      * Creates the Taskwarrior plugin
@@ -43,14 +38,16 @@ class Plugin extends ServerPlugin {
      * @param CalendarProcessor $TWCalManager
      *
      */
-    function __construct($config = null){
-      if (isset($config)) {
-        $this->config = $config;
-      } else  {
-        $this->config = new ConfigBuilder();
-      }
-      $this->storageManager = new StorageManager($this->config);
-      $this->addStorages();
+    function __construct($configDir){
+      $configs = $this->buildConfigurations($configDir);
+      $this->storageManager = new StorageManager($configs);
+      $this->initializeStorages($configDir, $configs);
+    }
+
+    public function buildConfigurations($configDir) {
+      $this->config = new ConfigBuilder($configDir);
+      $this->config->add(new TaskwarriorConfig());
+      return $this->config->loadYaml();
     }
 
     /**
@@ -58,10 +55,9 @@ class Plugin extends ServerPlugin {
      *
      */
 
-    public function addStorages() {
-      $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 'rc.hooks=off']), new TaskwarriorConfig());
+    public function initializeStorages($configDir, $configs) {
+      $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 'rc.hooks=off']), $configDir, $configs);
       $this->storageManager->addStorage(Taskwarrior::NAME, $taskwarrior); 
-      $this->storageManager->init();
     }
 
     /**

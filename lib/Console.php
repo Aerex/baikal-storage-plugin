@@ -18,14 +18,15 @@ class Console extends AbstractConsole {
     }
   }
 
-  public function execute($cmd, $args, $input = null) {
+  public function execute($cmd, $args, $input = null, $envs = []) {
     $stdin[] = $cmd;
-    $stdin[] = array_merge($stdin, $this->defaultArgs, $args); 
+    $stdin = array_merge($stdin, $this->defaultArgs, $args); 
 
     if (isset($input)) {
       $stdin[] = $this->convertToString($input);
-      $process = new Process($stdin);
     }
+    $process = new Process(implode(' ', $stdin), $input, $envs);
+    $process->inheritEnvironmentVariables();
 
     try {
       $process->mustRun();
