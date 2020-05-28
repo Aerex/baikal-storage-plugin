@@ -9,10 +9,10 @@ use Symfony\Component\Yaml\Yaml;
 
 class ConfigBuilder implements ConfigurationInterface {
   private $configs = [];
-  private $configDir;
+  private $configFile;
 
-  public function __construct($configDir) {
-    $this->configDir = $configDir;
+  public function __construct($configFile) {
+    $this->configFile = $configFile;
     $this->processor = new Processor();
   }
 
@@ -23,7 +23,20 @@ class ConfigBuilder implements ConfigurationInterface {
   public function getConfigTreeBuilder() {
     $treeBuilder = new TreeBuilder();
     $rootNode = $treeBuilder->root('configs');
-    $ref = $rootNode->children();
+    $ref = $rootNode->children()
+        ->arrayNode('logger')
+          ->canBeEnabled()
+              ->children()
+                ->scalarNode('file')
+                ->end()
+                ->scalarNode('level')
+                  ->defaultValue('ERROR')
+                  ->validate()
+                    ->IfNotInArray(['DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'])
+                      ->thenInvalid('Invalid log level %s')
+                    ->end()
+                  ->end();
+    
     foreach ($this->configs as $config) {
       $ref = $ref->append($config->get());
     }
@@ -32,8 +45,7 @@ class ConfigBuilder implements ConfigurationInterface {
   }
 
   public function readContent() {
-    $contents = sprintf('%s/storage.yaml', $this->configDir);
-    return file_get_contents($contents);
+    return file_get_contents($this->configFile);
   }
 
   public function loadYaml() {

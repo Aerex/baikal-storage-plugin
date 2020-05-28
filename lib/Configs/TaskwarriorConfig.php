@@ -15,6 +15,9 @@ class TaskwarriorConfig {
             ->scalarNode('taskrc')
               ->defaultValue('~/.taskrc')
             ->end()
+            ->scalarNode('project_tag_suffix')
+              ->defaultValue('project_')
+            ->end()
     ->end();
         
     return $node;

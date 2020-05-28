@@ -3,19 +3,20 @@
 namespace Aerex\BaikalStorage\Storages;
 
 use Sabre\VObject\Component\VCalendar as Calendar;
+use Aerex\BaikalStorage\Logger;
 use Carbon\Carbon;
 
 class Taskwarrior implements IStorage {
 
-  private const DATA_FILES = ['pending.data', 'completed.data', 'undo.data'];
   public const NAME = 'taskwarrior';
   private $tasks = [];
-  private $configDir;
   private $configs;
-  public function __construct($console, $configDir, $configs) {
+  private $logger;
+
+  public function __construct($console, $configs) {
     $this->console = $console;
-    $this->configDir = $configDir;
     $this->configs = $configs['taskwarrior'];
+    $this->logger = new Logger($configs, 'Taskwarrior');
   }
 
   public function getConfig() {
@@ -23,45 +24,22 @@ class Taskwarrior implements IStorage {
   }
 
   public function refresh() {
-    $fp = fopen(sprintf('%s/taskwarrior-baikal-storage.lock', $this->configDir), 'a'); 
-
-    if (!$fp || !flock($fp, LOCK_EX | LOCK_NB, $eWouldBlock) || $eWouldBlock) {
-      fputs(STDERR, 'Could not get lock');
-    }
-
-    $mtime = 0;
-    $tasksUpdated = false;
-    foreach (Taskwarrior::DATA_FILES as $dataFile) {
-      $fmtime = filemtime(sprintf('%s/%s', $this->configs['taskdata'], $dataFile));
-      if ($fmtime > $mtime) {
-        $mtime = $fmtime;
-        $tasksUpdated = true;
-      }
-    }
-
-    if ($tasksUpdated) {
-      $tasks = json_decode($this->console->execute('task', ['export'], null, 
-        ['TASKRC' => $this->configs['taskrc'], 'TASKDATA' => $this->configs['taskdata']]), true);
-      foreach ($tasks as $task) {
-        $this->tasks[$task['uuid']] = $task;
-      }
-    }
-    fclose($fp);
-    unlink(sprintf('%s/taskwarrior-baikal-storage.lock', $this->configDir));
+    $output = $this->console->execute('task', ['sync'], null, 
+      ['TASKRC' => $this->configs['taskrc'],'TASKDATA' => $this->configs['taskdata']]);
+    $this->logger->info($output);
   }
 
   public function vObjectToTask($vtodo) {
-    if (isset($this->tasks['uid']) && $this->tasks['uid'] == $vtodo->UID) {
-      $task = $this->tasks['uid'];
+    if (isset($this->tasks[(string)$vtodo->UID])) {
+      $task = $this->tasks[(string)$vtodo->UID];
     } else {
       $task = [];
       $task['uid'] = (string)$vtodo->UID;
     }
 
-
-    if (!isset($vtodo->DESCRIPTION) && isset($vtodo->SUMMARY)){
+    if (isset($vtodo->SUMMARY) && !isset($vtodo->DESCRIPTION)){
       $task['description'] = (string)$vtodo->SUMMARY;
-    } else {
+    } else if(isset($vtodo->DESCRIPTION)) {
       $task['description'] = (string)$vtodo->DESCRIPTION;
     }
 
@@ -108,49 +86,55 @@ class Taskwarrior implements IStorage {
 
     if (isset($vtodo->STATUS)) {
       switch((string)$vtodo->STATUS) {
-      case 'NEEDS-ACTION':
-        $task['status'] = 'pending';
-        break;
-      case 'COMPLETED':
-        $task['status'] = 'completed';
-        if (!isset($task['end'])) {
-          $task['end'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C));
-        }
-        break;
-      case 'CANCELED':
-        $task['status'] = 'deleted';
-        if (!isset($task['end'])) {
-          $task['end'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C));
-        }
-        break;
+        case 'NEEDS-ACTION':
+          $task['status'] = 'pending';
+          break;
+        case 'COMPLETED':
+          $task['status'] = 'completed';
+          if (!isset($task['end'])) {
+            $task['end'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C));
+          }
+          break;
+        case 'CANCELED':
+          $task['status'] = 'deleted';
+          if (!isset($task['end'])) {
+            $task['end'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C));
+          }
+          break;
       }
-
     }
 
     if (isset($vtodo->CATEGORIES)) {
       $task['tags'] = [];
-      foreach ($vtodo->CATEGORIES as $category) {
-        if (isset($this->configs['project_tag_suffix'])) {
-          $projTagSuffixRegExp = sprintf('/^%s_/', $this->configs['project_tag_suffix']);
-          if (preg_match($category, $projTagSuffixRegExp)) {
-            $task['project'] = preg_replace($projTagSuffixRegExp, '', $category);
-            continue;
+        foreach ($vtodo->CATEGORIES as $category) {
+          if (isset($this->configs['project_tag_suffix'])) {
+            $projTagSuffixRegExp = sprintf('/^%s_/', $this->configs['project_tag_suffix']);
+            if (preg_match($category, $projTagSuffixRegExp)) {
+              $task['project'] = preg_replace($projTagSuffixRegExp, '', $category);
+              continue;
+            }
           }
+          $task['tags'] = $category;
         }
-        $task['tags'] = $category;
-      }
-    }
-
-    return $task;
       }
 
-      public function save(Calendar $c) {
-        if (!isset($c->VTODO)){
-          throw new \Exception('Calendar event does not contain VTODO');
-        }
-        $this->refresh();
-        $task = $this->vObjectToTask($c->VTODO);
-        $this->console->execute('task', ['import'], $task, 
-          ['TASKRC' => $this->configs['taskrc'],'TASKDATA' => $this->configs['taskdata']]);
-      } 
+      return $task;
+  }
+
+  public function save(Calendar $c) {
+    if (!isset($c->VTODO)){
+      throw new \Exception('Calendar event does not contain VTODO');
+      $this->logger->error('Calendar event does not contain VTODO');
     }
+    $this->logger->info($c->VTODO->getJsonValue());
+    $this->refresh();
+    $task = $this->vObjectToTask($c->VTODO);
+    $this->logger->info(json_encode($task));
+    $this->logger->info(
+      sprintf('Executing TASKRC = %s TASKDATA = %s task import %s', $this->configs['taskrc'], $this->configs['taskdata'], $task)
+    );
+    $output = $this->console->execute('task', ['import'], $task, 
+      ['TASKRC' => $this->configs['taskrc'],'TASKDATA' => $this->configs['taskdata']]);
+     $this->logger->info($output);
+  }
+}

@@ -1,4 +1,0 @@
-taskwarrior: 
-  taskdata: '/home/user/.task'
-  taskrc: '~/home/user/.taskrc'
-  project_tag_suffix: 'project_'

@@ -38,14 +38,14 @@ class Plugin extends ServerPlugin {
      * @param CalendarProcessor $TWCalManager
      *
      */
-    function __construct($configDir){
-      $configs = $this->buildConfigurations($configDir);
+    function __construct($configFile){
+      $configs = $this->buildConfigurations($configFile);
       $this->storageManager = new StorageManager($configs);
-      $this->initializeStorages($configDir, $configs);
+      $this->initializeStorages($configs);
     }
 
-    public function buildConfigurations($configDir) {
-      $this->config = new ConfigBuilder($configDir);
+    public function buildConfigurations($configFile) {
+      $this->config = new ConfigBuilder($configFile);
       $this->config->add(new TaskwarriorConfig());
       return $this->config->loadYaml();
     }
@@ -55,8 +55,8 @@ class Plugin extends ServerPlugin {
      *
      */
 
-    public function initializeStorages($configDir, $configs) {
-      $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 'rc.hooks=off']), $configDir, $configs);
+    public function initializeStorages($configs) {
+      $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 'rc.hooks=off']),  $configs);
       $this->storageManager->addStorage(Taskwarrior::NAME, $taskwarrior); 
     }
 

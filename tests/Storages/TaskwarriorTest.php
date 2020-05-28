@@ -14,13 +14,13 @@ class TaskwarriorTest extends TestCase {
    * */
   private $mockConsole;
 
-  function setUp() {
+  protected function setUp(): void {
     $this->mockConsole = $this->createMock(AbstractConsole::class);
   }
 
   public function testVObjectToTask() {
-    $configs = ['taskwarrior' => ['taskrc' => '', 'taskdata' => '']];
-    $this->taskwarrior = new Taskwarrior($this->mockConsole, '', $configs);
+    $configs = ['taskwarrior' => ['taskrc' => '', 'taskdata' => ''], 'logger' => ['file' => '', 'level'=>  'DEBUG', 'enabled' => true]];
+    $this->taskwarrior = new Taskwarrior($this->mockConsole, $configs);
     $vcalendar = new Calendar([
       'VTODO' => [
         'SUMMARY' => 'Finish project',
@@ -33,7 +33,6 @@ class TaskwarriorTest extends TestCase {
         'RRULE' => 'FREQ=MONTHLY'
       ]
     ]);
-    echo $vcalendar->VTODO->RRULE->getJsonValue()[0]['freq'];
 
    $task = $this->taskwarrior->vObjectToTask($vcalendar->VTODO);
    $this->assertArrayHasKey('uid', $task, 'task should have a uid');
