@@ -27,15 +27,16 @@ class ConfigBuilder implements ConfigurationInterface {
         ->arrayNode('logger')
           ->canBeEnabled()
               ->children()
-                ->scalarNode('file')
-                ->end()
+                ->scalarNode('file')->end()
                 ->scalarNode('level')
                   ->defaultValue('ERROR')
                   ->validate()
                     ->IfNotInArray(['DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'])
                       ->thenInvalid('Invalid log level %s')
-                    ->end()
-                  ->end();
+                  ->end()
+                ->end()
+              ->end()
+            ->end();
     
     foreach ($this->configs as $config) {
       $ref = $ref->append($config->get());

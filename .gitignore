@@ -1,3 +1,4 @@
 vendor/
 main.uml
 composer.lock
+.phpunit.result.cache
