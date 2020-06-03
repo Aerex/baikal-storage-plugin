@@ -38,14 +38,12 @@ class StorageManager {
     if (!isset($this->configs)) {
       throw new \Exception('StorageManger was not initialize or configs are not defined'); 
     }
-    foreach ($this->configs as $key => $value) {
-      if ($key !== 'logger') {
-        $storage = $this->storages[$key];
-        if (!isset($storage)){
-          throw new \Exception();
-        }
-        $storage->save($calendar);
+    foreach ($this->configs['storages'] as $key => $value) {
+      $storage = $this->storages[$key];
+      if (!isset($storage)){
+        throw new \Exception();
       }
+      $storage->save($calendar);
     }
   }
 }

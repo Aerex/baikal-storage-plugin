@@ -5,6 +5,7 @@ namespace Aerex\BaikalStorage\Storages;
 use Sabre\VObject\Component\VCalendar as Calendar;
 use Aerex\BaikalStorage\Logger;
 use Carbon\Carbon;
+use Carbon\CarbonTimeZone;
 
 class Taskwarrior implements IStorage {
 
@@ -12,11 +13,13 @@ class Taskwarrior implements IStorage {
   private $tasks = [];
   private $configs;
   private $logger;
+  private $tz;
 
   public function __construct($console, $configs) {
     $this->console = $console;
     $this->configs = $configs['taskwarrior'];
     $this->logger = new Logger($configs, 'Taskwarrior');
+    $this->tz = new CarbonTimeZone($configs['general']['timezone']);
   }
 
   public function getConfig() {
@@ -51,19 +54,19 @@ class Taskwarrior implements IStorage {
     }
 
     if (isset($vtodo->DTSTAMP)){
-      $task['entry'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C));
+      $task['entry'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C), $this->tz);
     } 
 
     if (isset($vtodo->DTSTART)) {
-      $task['start'] = new Carbon($vtodo->DTSTART->getDateTime()->format(\DateTime::W3C));
+      $task['start'] = new Carbon($vtodo->DTSTART->getDateTime()->format(\DateTime::W3C), $this->tz);
     }
 
     if (isset($vtodo->DTEND)){
-      $task['end'] = new Carbon($vtodo->DTEND->getDateTime()->format(\DateTime::W3C));
+      $task['end'] = new Carbon($vtodo->DTEND->getDateTime()->format(\DateTime::W3C), $this->tz);
     }
 
     if (isset($vtodo->{'LAST-MODIFIED'})) {
-      $task['modified'] = new Carbon($vtodo->{'LAST-MODIFIED'}->getDateTime()->format(\DateTime::W3C));
+      $task['modified'] = new Carbon($vtodo->{'LAST-MODIFIED'}->getDateTime()->format(\DateTime::W3C), $this->tz);
     }
 
     if (isset($vtodo->PRIORITY)) {
@@ -99,13 +102,13 @@ class Taskwarrior implements IStorage {
         case 'COMPLETED':
           $task['status'] = 'completed';
           if (!isset($task['end'])) {
-            $task['end'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C));
+            $task['end'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C), $this->tz);
           }
           break;
         case 'CANCELED':
           $task['status'] = 'deleted';
           if (!isset($task['end'])) {
-            $task['end'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C));
+            $task['end'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C), $this->tz);
           }
           break;
       }
