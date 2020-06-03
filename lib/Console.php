@@ -25,7 +25,7 @@ class Console extends AbstractConsole {
     if (isset($input)) {
       $input = $this->convertToString($input);
     }
-    $process = new Process(implode(' ', $stdin), $input, $envs);
+    $process = new Process(implode(' ', $stdin), null, $envs, $input);
     $process->inheritEnvironmentVariables();
 
     try {

@@ -26,9 +26,9 @@ class Taskwarrior implements IStorage {
   public function refresh() {
     $output = $this->console->execute('task', ['sync'], null, 
       ['TASKRC' => $this->configs['taskrc'],'TASKDATA' => $this->configs['taskdata']]);
-      $tasks = json_decode($this->console->execute('task', ['export'], null,
+      $this->tasks = json_decode($this->console->execute('task', ['export'], null,
         ['TASKRC' => $this->configs['taskrc'], 'TASKDATA' => $this->configs['taskdata']]), true);
-      foreach ($tasks as $task) {
+      foreach ($this->tasks as $task) {
         if (isset($task['uid'])) {
           $this->tasks[$task['uid']] = $task;
         }

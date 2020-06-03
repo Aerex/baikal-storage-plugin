@@ -1,2 +1,3 @@
-logger:
-  file: /home/user/logger.yaml
+general:
+  logger:
+    file: /home/user/logger.yaml

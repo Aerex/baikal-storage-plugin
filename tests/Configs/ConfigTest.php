@@ -13,18 +13,21 @@ class ConfigTest extends TestCase {
 
   public $mockConfigBuilder;
 
-  public function testLoggerConfigs() {
+  public function testGeneralLoggerConfigs() {
     $configs = new ConfigBuilder(__DIR__ . '/Fixtures/LoggerConfig.yaml');
     $contents = $configs->loadYaml();
     $this->assertEquals(sizeof($contents), 1);
-    $this->assertArrayHasKey('logger', $contents, 'config missing logger property');
-    $this->assertArrayHasKey('file', $contents['logger'], 'config missing logger.file property');
-    $this->assertEquals($contents['logger']['file'], '/home/user/logger.yaml');
-    $this->assertArrayHasKey('level', $contents['logger'], 'config missing logger.level property');
-    $this->assertEquals($contents['logger']['level'], 'ERROR', 'ERROR is not set as default logger level');
-    $this->assertArrayHasKey('enabled', $contents['logger'], 'config missing logger.enabled property');
-    $this->assertTrue($contents['logger']['enabled']);
-
+    $this->assertArrayHasKey('general', $contents, 'config missing general config');
+    $generalConfigs = $contents['general'];
+    $this->assertArrayHasKey('logger', $generalConfigs, 'general config is missing logger property');
+    $this->assertArrayHasKey('file', $generalConfigs['logger'], 'general logger config missing file property');
+    $this->assertEquals($generalConfigs['logger']['file'], '/home/user/logger.yaml');
+    $this->assertArrayHasKey('level', $generalConfigs['logger'], 'general logger config missing level property');
+    $this->assertEquals($generalConfigs['logger']['level'], 'ERROR', 'ERROR is not set as default logger level');
+    $this->assertArrayHasKey('enabled', $generalConfigs['logger'], 'general config logger enabled property is missing');
+    $this->assertTrue($generalConfigs['logger']['enabled']);
+    $this->assertArrayHasKey('timezone', $generalConfigs, 'general config is missing timezone property');
+    $this->assertEquals($generalConfigs['timezone'], 'UTC', 'UTC is not set as default timezone');
   }
 
   public function testTaskwarriorConfig() {
@@ -32,19 +35,15 @@ class ConfigTest extends TestCase {
     $configs->add(new TaskwarriorConfig());
     $contents = $configs->loadYaml();
     $this->assertEquals(sizeof($contents), 2);
-    $this->assertArrayHasKey('logger', $contents, 'config missing logger property');
-    $this->assertArrayHasKey('file', $contents['logger'], 'config missing logger.file property');
-    $this->assertArrayHasKey('level', $contents['logger'], 'config missing logger.level property');
-    $this->assertArrayHasKey('enabled', $contents['logger'], 'config missing logger.enabled property');
-    $this->assertArrayHasKey('taskwarrior', $contents, 'config missing taskwarrior property');
-    $this->assertArrayHasKey('taskrc', $contents['taskwarrior'], 'config missing taskwarrior.taskrc property');
-    $this->assertEquals($contents['taskwarrior']['taskrc'], '/home/aerex/.taskrc');
-    $this->assertArrayHasKey('taskdata', $contents['taskwarrior'], 'config missing taskwarrior.taskdata property');
-    $this->assertEquals($contents['taskwarrior']['taskdata'], '/home/aerex/.task');
-    $this->assertArrayHasKey('project_tag_suffix', $contents['taskwarrior'], 'config missing taskwarrior.taskdata property');
-    $this->assertEquals($contents['taskwarrior']['project_tag_suffix'], 'project_');
+    $this->assertArrayHasKey('storages', $contents, 'storages config missing');
+    $this->assertArrayHasKey('taskwarrior', $contents['storages'], 'storage config missing taskwarrior property');
+    $taskwarriorConfigs = $contents['storages']['taskwarrior'];
+    $this->assertArrayHasKey('taskrc', $taskwarriorConfigs, 'taskwarrior config is missing taskrc property');
+    $this->assertEquals($taskwarriorConfigs['taskrc'], '/home/aerex/.taskrc');
+    $this->assertArrayHasKey('taskdata', $taskwarriorConfigs, 'taskwarrior config is missing taskdata property');
+    $this->assertEquals($taskwarriorConfigs['taskdata'], '/home/aerex/.task');
+    $this->assertArrayHasKey('project_tag_suffix', $taskwarriorConfigs, 'taskwarrior config is missing project_tag_suffix property');
+    $this->assertEquals($taskwarriorConfigs['project_tag_suffix'], 'project_');
   }
-
-
 }
 
