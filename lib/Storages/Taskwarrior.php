@@ -26,6 +26,13 @@ class Taskwarrior implements IStorage {
   public function refresh() {
     $output = $this->console->execute('task', ['sync'], null, 
       ['TASKRC' => $this->configs['taskrc'],'TASKDATA' => $this->configs['taskdata']]);
+      $tasks = json_decode($this->console->execute('task', ['export'], null,
+        ['TASKRC' => $this->configs['taskrc'], 'TASKDATA' => $this->configs['taskdata']]), true);
+      foreach ($tasks as $task) {
+        if (isset($task['uid'])) {
+          $this->tasks[$task['uid']] = $task;
+        }
+      }
     $this->logger->info($output);
   }
 
@@ -37,7 +44,7 @@ class Taskwarrior implements IStorage {
       $task['uid'] = (string)$vtodo->UID;
     }
 
-    if (isset($vtodo->SUMMARY) && !isset($vtodo->DESCRIPTION)){
+    if (isset($vtodo->SUMMARY)){
       $task['description'] = (string)$vtodo->SUMMARY;
     } else if(isset($vtodo->DESCRIPTION)) {
       $task['description'] = (string)$vtodo->DESCRIPTION;
@@ -108,8 +115,8 @@ class Taskwarrior implements IStorage {
       $task['tags'] = [];
         foreach ($vtodo->CATEGORIES as $category) {
           if (isset($this->configs['project_tag_suffix'])) {
-            $projTagSuffixRegExp = sprintf('/^%s_/', $this->configs['project_tag_suffix']);
-            if (preg_match($category, $projTagSuffixRegExp)) {
+            $projTagSuffixRegExp = sprintf('/^%s/', $this->configs['project_tag_suffix']);
+            if (preg_match($projTagSuffixRegExp, $category)) {
               $task['project'] = preg_replace($projTagSuffixRegExp, '', $category);
               continue;
             }
@@ -122,19 +129,23 @@ class Taskwarrior implements IStorage {
   }
 
   public function save(Calendar $c) {
-    if (!isset($c->VTODO)){
-      throw new \Exception('Calendar event does not contain VTODO');
-      $this->logger->error('Calendar event does not contain VTODO');
+    try {
+      if (!isset($c->VTODO)){
+        throw new \Exception('Calendar event does not contain VTODO');
+      }
+      $this->logger->info(json_encode($c->jsonSerialize()));
+      $this->refresh();
+      $task = $this->vObjectToTask($c->VTODO);
+      $this->logger->info(json_encode($task));
+      $this->logger->info(
+        sprintf('Executing TASKRC = %s TASKDATA = %s task import %s', $this->configs['taskrc'], $this->configs['taskdata'], json_encode($task))
+      );
+      $output = $this->console->execute('task', ['import'], $task, 
+        ['TASKRC' => $this->configs['taskrc'],'TASKDATA' => $this->configs['taskdata']]);
+      $this->logger->info($output);
+    } catch (\Exception $e) {
+      $this->logger->error($e->getTraceAsString());
+      throw $e;
     }
-    $this->logger->info($c->VTODO->getJsonValue());
-    $this->refresh();
-    $task = $this->vObjectToTask($c->VTODO);
-    $this->logger->info(json_encode($task));
-    $this->logger->info(
-      sprintf('Executing TASKRC = %s TASKDATA = %s task import %s', $this->configs['taskrc'], $this->configs['taskdata'], $task)
-    );
-    $output = $this->console->execute('task', ['import'], $task, 
-      ['TASKRC' => $this->configs['taskrc'],'TASKDATA' => $this->configs['taskdata']]);
-     $this->logger->info($output);
   }
 }

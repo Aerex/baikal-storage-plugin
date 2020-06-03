@@ -23,7 +23,7 @@ class Console extends AbstractConsole {
     $stdin = array_merge($stdin, $this->defaultArgs, $args); 
 
     if (isset($input)) {
-      $stdin[] = $this->convertToString($input);
+      $input = $this->convertToString($input);
     }
     $process = new Process(implode(' ', $stdin), $input, $envs);
     $process->inheritEnvironmentVariables();
@@ -32,7 +32,6 @@ class Console extends AbstractConsole {
       $process->mustRun();
       return $process->getOutput();
     } catch (ProcessFailedException $error) {
-      echo $error->getMessage();
       throw $error;
     }
   }
