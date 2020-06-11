@@ -17,7 +17,7 @@ class Taskwarrior implements IStorage {
 
   public function __construct($console, $configs) {
     $this->console = $console;
-    $this->configs = $configs['taskwarrior'];
+    $this->configs = $configs['storages']['taskwarrior'];
     $this->logger = new Logger($configs, 'Taskwarrior');
     $this->tz = new CarbonTimeZone($configs['general']['timezone']);
   }
@@ -81,7 +81,7 @@ class Taskwarrior implements IStorage {
     }
 
     if (isset($vtodo->DUE)){
-      $task['due'] = new Carbon($vtodo->DUE->getDateTime()->format(\DateTime::W3C)); 
+      $task['due'] = new Carbon($vtodo->DUE->getDateTime()); 
     }
 
     if (isset($vtodo->RRULE)) {

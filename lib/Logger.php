@@ -9,13 +9,22 @@ class Logger {
   private $configs = ['enabled' => false];
 
   function __construct($configs, $tag) {
-    if (isset($configs['logger'])) {
-      $this->configs = $configs['logger'];
+    if (isset($configs['general']) && isset($configs['general']['logger'])) {
+      $this->configs = $configs['general']['logger'];
     }
     if ($this->configs['enabled']) {
+      $this->createLoggerFile();
       $this->logger = new Monolog($tag);
       $logLevel = Monolog::getLevels()[$this->configs['level']];
       $this->logger->pushHandler(new StreamHandler($this->configs['file'], $logLevel));
+    }
+  }
+
+  private function createLoggerFile() {
+    if (!file_exists($this->configs['file'])) {
+      if (!fopen($this->configs['file'], 'w')) {
+        throw new \Exception(sprintf('Could not create logger file %s', $this->configs['file']));
+      }
     }
   }
 
