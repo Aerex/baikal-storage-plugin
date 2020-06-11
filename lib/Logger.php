@@ -20,7 +20,7 @@ class Logger {
     }
   }
 
-  private function createLoggerFile() {
+  public function createLoggerFile() {
     if (!file_exists($this->configs['file'])) {
       if (!fopen($this->configs['file'], 'w')) {
         throw new \Exception(sprintf('Could not create logger file %s', $this->configs['file']));

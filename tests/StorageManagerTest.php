@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 use Aerex\BaikalStorage\AbstractConsole;
 use Aerex\BaikalStorage\Configs\ConfigBuilder;
 use Aerex\BaikalStorage\Storages\Taskwarrior;
-use Aerex\BaikalStorage\Storages\IStorage;
+use Aerex\BaikalStorage\Logger;
 use Sabre\VObject\Component\VCalendar as Calendar;
 
 class StorageManagerTest extends TestCase {
@@ -27,11 +27,20 @@ class StorageManagerTest extends TestCase {
         ->getMock();
     $this->mockConsole = $this->createMock(AbstractConsole::class);
     $this->mockStorage = $this->createMock(Taskwarrior::class);
-  }
+    $this->mockLogger = $this->createMock(Logger::class);
+    $this->configs = [
+      'general' => [
+        'logger' => ['file' => '', 'level'=>  'DEBUG', 'enabled' => true],
+        'timezone' => 'UTC'
+      ], 
+      'storages' => [
+        'taskwarrior' => ['taskrc' => '', 'taskdata' => '']
+      ]
+    ];
+}
 
-  public function testAddTaskwarriorStorage() {
-    $configs = ['taskwarrior' => ['taskrc' => '', 'taskdata' => '']];
-    $tw = new Taskwarrior($this->mockConsole, $configs);
+public function testAddTaskwarriorStorage() {
+    $tw = new Taskwarrior($this->mockConsole, $this->configs, $this->mockLogger);
     $manager = new StorageManager($this->mockConfigBuilder);
     $manager->addStorage(Taskwarrior::NAME, $tw);
     $storages = $manager->getStorages();
@@ -46,8 +55,7 @@ class StorageManagerTest extends TestCase {
       ->method('save')
         ->with($this->equalTo($cal));
 
-    $configs = ['taskwarrior' => ['taskrc' => '', 'taskdata' => '']];
-    $manager = new StorageManager($configs);
+    $manager = new StorageManager($this->configs);
     $manager->addStorage(Taskwarrior::NAME, $this->mockStorage);
     $manager->import($cal);
 

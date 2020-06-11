@@ -2,6 +2,7 @@
 
 namespace Aerex\BaikalStorage;
 
+use Aerex\BaikalStorage\Logger;
 use Aerex\BaikalStorage\Storages\Taskwarrior;
 use Aerex\BaikalStorage\Configs\ConfigBuilder;
 use Aerex\BaikalStorage\Configs\TaskwarriorConfig;
@@ -33,7 +34,7 @@ class Plugin extends ServerPlugin {
 
     
     /**
-     * Creates the Taskwarrior plugin
+     * Creates the Storage plugin
      *
      * @param CalendarProcessor $TWCalManager
      *
@@ -56,7 +57,7 @@ class Plugin extends ServerPlugin {
      */
 
     public function initializeStorages($configs) {
-      $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 'rc.hooks=off']),  $configs);
+      $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 'rc.hooks=off']),  $configs, new Logger($configs, 'Taskwarrior'););
       $this->storageManager->addStorage(Taskwarrior::NAME, $taskwarrior); 
     }
 

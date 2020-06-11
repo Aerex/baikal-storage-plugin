@@ -4,6 +4,7 @@ namespace Aerex\BaikalStorage;
 
 use PHPUnit\Framework\TestCase;
 use Aerex\BaikalStorage\AbstractConsole;
+use Aerex\BaikalStorage\Logger;
 use Sabre\VObject\Component\VCalendar as Calendar;
 use Aerex\BaikalStorage\Storages\Taskwarrior;
 
@@ -16,11 +17,20 @@ class TaskwarriorTest extends TestCase {
 
   protected function setUp(): void {
     $this->mockConsole = $this->createMock(AbstractConsole::class);
+    $this->mockLogger = $this->createMock(Logger::class);
   }
 
   public function testVObjectToTask() {
-    $configs = ['taskwarrior' => ['taskrc' => '', 'taskdata' => ''], 'logger' => ['file' => '', 'level'=>  'DEBUG', 'enabled' => true]];
-    $this->taskwarrior = new Taskwarrior($this->mockConsole, $configs);
+    $configs = [
+      'general' => [
+        'logger' => ['file' => '', 'level'=>  'DEBUG', 'enabled' => true],
+        'timezone' => 'UTC'
+      ], 
+      'storages' => [
+        'taskwarrior' => ['taskrc' => '', 'taskdata' => '']
+      ]
+    ];
+    $this->taskwarrior = new Taskwarrior($this->mockConsole, $configs, $this->mockLogger);
     $vcalendar = new Calendar([
       'VTODO' => [
         'SUMMARY' => 'Finish project',

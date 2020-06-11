@@ -3,7 +3,6 @@
 namespace Aerex\BaikalStorage\Storages;
 
 use Sabre\VObject\Component\VCalendar as Calendar;
-use Aerex\BaikalStorage\Logger;
 use Carbon\Carbon;
 use Carbon\CarbonTimeZone;
 
@@ -15,10 +14,10 @@ class Taskwarrior implements IStorage {
   private $logger;
   private $tz;
 
-  public function __construct($console, $configs) {
+  public function __construct($console, $configs, $logger) {
     $this->console = $console;
     $this->configs = $configs['storages']['taskwarrior'];
-    $this->logger = new Logger($configs, 'Taskwarrior');
+    $this->logger = $logger; 
     $this->tz = new CarbonTimeZone($configs['general']['timezone']);
   }
 
