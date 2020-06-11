@@ -17,7 +17,7 @@
     ],
     "require": {
         "php": ">=5.5",
-        "sabre/dav"     : "~4.0.3",
+        "sabre/dav"     : "~4.1.0",
         "sabre/vobject": "^4.0",
         "nesbot/carbon": "^2.0.0",
         "laminas/laminas-validator": "^2.13",
