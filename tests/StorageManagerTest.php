@@ -30,8 +30,7 @@ class StorageManagerTest extends TestCase {
     $this->mockLogger = $this->createMock(Logger::class);
     $this->configs = [
       'general' => [
-        'logger' => ['file' => '', 'level'=>  'DEBUG', 'enabled' => true],
-        'timezone' => 'UTC'
+        'logger' => ['file' => '', 'level'=>  'DEBUG', 'enabled' => true]
       ], 
       'storages' => [
         'taskwarrior' => ['taskrc' => '', 'taskdata' => '']
@@ -44,7 +43,7 @@ public function testAddTaskwarriorStorage() {
     $manager = new StorageManager($this->mockConfigBuilder);
     $manager->addStorage(Taskwarrior::NAME, $tw);
     $storages = $manager->getStorages();
-    $configs = $manager->getConfigs();
+    $this->configs = $manager->getConfigs();
     $this->assertEquals(sizeof(array_keys($storages)), 1, 'Taskwarrior storage was not added');
     $this->assertArrayHasKey('taskwarrior', $storages, 'Storages should have taskwarrior');
   }

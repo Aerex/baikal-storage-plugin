@@ -3,8 +3,6 @@
 namespace Aerex\BaikalStorage\Storages;
 
 use Sabre\VObject\Component\VCalendar as Calendar;
-use Carbon\Carbon;
-use Carbon\CarbonTimeZone;
 
 class Taskwarrior implements IStorage {
 
@@ -12,17 +10,52 @@ class Taskwarrior implements IStorage {
   private $tasks = [];
   private $configs;
   private $logger;
-  private $tz;
 
   public function __construct($console, $configs, $logger) {
     $this->console = $console;
     $this->configs = $configs['storages']['taskwarrior'];
     $this->logger = $logger; 
-    $this->tz = new CarbonTimeZone($configs['general']['timezone']);
   }
 
-  public function getConfig() {
-    return $this->config;
+  public function getConfigBrowser() {
+    $html  = '<tr>';
+    $html .= '<th>taskrc</th>';
+    $html .= '<td>The enivronment variable overrides the default and the command line specification of the .taskrc file</td>';
+    $html .= '<td><input name="tw_taskrc" type="text" value="' . $this->configs['taskrc'] . '"></td>';
+    $html .= '</tr>';
+    $html  = '<tr>';
+    $html .= '<th>taskrc</th>';
+    $html .= '<td>The enivronment variable overrides the default and the command line specification of the .taskrc file</td>';
+    $html .= '<td><input name="tw_taskrc" type="text" value="' . $this->configs['taskrc'] . '"></td>';
+    $html .= '</tr>';
+    $html .= '<tr>';
+    $html .= '<th>taskdata</th>';
+    $html .= '<td>The environment variable overrides the default and the command line, and the "data.location" configuration setting of the task data directory</td>';
+    $html .= '<td><input name="tw_taskdata" type="text" value="' . $this->configs['taskdata'] . '"></td>';
+    $html .= '</tr>';
+    $html .= '<tr>';
+    $html .= '<th>project_category_prefix</th>';
+    $html .= "<td>The word after the given prefix for a iCal category will be used to identify a task's project</td>";
+    $html .= '<td><input name="tw_project_category_prefix" placeholder ="project_" name="tw_project_category_prefix" type="text" value="' . $this->configs['project_category_prefix'] . '"></td>';
+    $html .= '</tr>';
+    return $html;
+  }
+
+  public function updateConfigs($postData) {
+    if (isset($postData['tw_taskrc'])) {
+      $this->configs['taskrc'] = $postData['tw_taskrc'];
+    }
+
+    if (isset($postData['tw_taskdata'])){
+      $this->configs['taskdata'] = $postData['tw_taskdata'];
+    }
+
+    if (isset($postData['tw_project_category_prefix'])){
+      $this->configs['project_category_prefix'] = $postData['tw_project_category_prefix'];
+    }
+
+    return $this->configs;
+
   }
 
   public function refresh() {
@@ -48,24 +81,41 @@ class Taskwarrior implements IStorage {
 
     if (isset($vtodo->SUMMARY)){
       $task['description'] = (string)$vtodo->SUMMARY;
-    } else if(isset($vtodo->DESCRIPTION)) {
-      $task['description'] = (string)$vtodo->DESCRIPTION;
-    }
-
-    if (isset($vtodo->DTSTAMP)){
-      $task['entry'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C), $this->tz);
     } 
 
+    if (isset($vtodo->DESCRIPTION)) {
+      $annotations = [];
+      if (isset($task['annotations'])) {
+        $annotations  = $task['annotations'];
+      }
+      $task['annotations'] = [];
+      $descriptionLines = explode('\n', $vtodo->DESCRIPTION);
+      foreach ($descriptionLines as $key => $descriptionLine) {
+          $annotationEntry = $vtodo->DTSTAMP->getDateTime()->modify("+$key second")->format(\DateTime::ISO8601);
+          foreach ($annotations as $annotation) {
+            if ($annotation['description'] == $descriptionLine) {
+              $annotationEntry = $annotation['entry'];
+              break;
+            }
+          }
+          array_push(['description' => $descriptionLine, 'entry' => $annotationEntry]);
+      }
+    }
+
+    if (!isset($task['entry'])){
+      $task['entry'] = $vtodo->DTSTAMP->getDateTime()->format(\DateTime::ISO8601);
+    }
+
     if (isset($vtodo->DTSTART)) {
-      $task['start'] = new Carbon($vtodo->DTSTART->getDateTime()->format(\DateTime::W3C), $this->tz);
+      $task['start'] = $vtodo->DTSTART->getDateTime()->format(\DateTime::ISO8601);
     }
 
     if (isset($vtodo->DTEND)){
-      $task['end'] = new Carbon($vtodo->DTEND->getDateTime()->format(\DateTime::W3C), $this->tz);
+      $task['end'] = $vtodo->DTEND->getDateTime()->format(\DateTime::ISO8601);
     }
 
     if (isset($vtodo->{'LAST-MODIFIED'})) {
-      $task['modified'] = new Carbon($vtodo->{'LAST-MODIFIED'}->getDateTime()->format(\DateTime::W3C), $this->tz);
+      $task['modified'] = $vtodo->{'LAST-MODIFIED'}->getDateTime()->format(\DateTime::ISO8601);
     }
 
     if (isset($vtodo->PRIORITY)) {
@@ -80,7 +130,7 @@ class Taskwarrior implements IStorage {
     }
 
     if (isset($vtodo->DUE)){
-      $task['due'] = new Carbon($vtodo->DUE->getDateTime()); 
+      $task['due'] = $vtodo->DUE->getDateTime()->format(\DateTime::ISO8601);
     }
 
     if (isset($vtodo->RRULE)) {
@@ -101,13 +151,13 @@ class Taskwarrior implements IStorage {
         case 'COMPLETED':
           $task['status'] = 'completed';
           if (!isset($task['end'])) {
-            $task['end'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C), $this->tz);
+            $task['end'] = $vtodo->DTSTAMP->getDateTime()->format(\DateTime::ISO8601);
           }
           break;
         case 'CANCELED':
           $task['status'] = 'deleted';
           if (!isset($task['end'])) {
-            $task['end'] = new Carbon($vtodo->DTSTAMP->getDateTime()->format(\DateTime::W3C), $this->tz);
+            $task['end'] = $vtodo->DTSTAMP->getDateTime()->format(\DateTime::ISO8601);
           }
           break;
       }
@@ -116,8 +166,8 @@ class Taskwarrior implements IStorage {
     if (isset($vtodo->CATEGORIES)) {
       $task['tags'] = [];
         foreach ($vtodo->CATEGORIES as $category) {
-          if (isset($this->configs['project_tag_suffix'])) {
-            $projTagSuffixRegExp = sprintf('/^%s/', $this->configs['project_tag_suffix']);
+          if (isset($this->configs['project_category_prefix'])) {
+            $projTagSuffixRegExp = sprintf('/^%s/', $this->configs['project_category_prefix']);
             if (preg_match($projTagSuffixRegExp, $category)) {
               $task['project'] = preg_replace($projTagSuffixRegExp, '', $category);
               continue;
@@ -126,6 +176,15 @@ class Taskwarrior implements IStorage {
           $task['tags'] = $category;
         }
       }
+
+    if (isset($vtodo->{'RELATED-TO'}) && isset($this->tasks[(string)$vtodo->{'RELATED-TO'}])) {
+      $relatedTask = $this->tasks[(string)$vtodo->{'RELATED-TO'}];
+      $task['depends'] = $relatedTask['uuid'];
+    }
+
+    if (isset($vtodo->GEO)){
+      $task['geo'] = $vtodo->GEO->getRawMimeDirValue();
+    }
 
       return $task;
   }

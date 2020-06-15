@@ -3,6 +3,7 @@
 namespace Aerex\BaikalStorage;
 
 use Aerex\BaikalStorage\Logger;
+use Monolog\Logger as Monolog;
 use Aerex\BaikalStorage\Storages\Taskwarrior;
 use Aerex\BaikalStorage\Configs\ConfigBuilder;
 use Aerex\BaikalStorage\Configs\TaskwarriorConfig;
@@ -32,6 +33,9 @@ class Plugin extends ServerPlugin {
      */
     protected $storageManager;
 
+    protected $rawConfigs;
+
+
     
     /**
      * Creates the Storage plugin
@@ -40,9 +44,9 @@ class Plugin extends ServerPlugin {
      *
      */
     function __construct($configFile){
-      $configs = $this->buildConfigurations($configFile);
-      $this->storageManager = new StorageManager($configs);
-      $this->initializeStorages($configs);
+      $this->rawConfigs = $this->buildConfigurations($configFile);
+      $this->storageManager = new StorageManager($this->rawConfigs);
+      $this->initializeStorages($this->rawConfigs);
     }
 
     public function buildConfigurations($configFile) {
@@ -57,7 +61,7 @@ class Plugin extends ServerPlugin {
      */
 
     public function initializeStorages($configs) {
-      $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 'rc.hooks=off']),  $configs, new Logger($configs, 'Taskwarrior'););
+      $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 'rc.hooks=off']),  $configs, new Logger($configs, 'Taskwarrior'));
       $this->storageManager->addStorage(Taskwarrior::NAME, $taskwarrior); 
     }
 
@@ -82,14 +86,13 @@ class Plugin extends ServerPlugin {
      */
     function getPluginName() {
 
-        return 'taskwarrior';
+        return 'baikal-storage';
 
     }
     /**
      * This method is called before any HTTP method handler.
      *
-     * This method intercepts any GET, DELETE, PUT and PROPFIND calls to
-     * filenames that are known to match the 'temporary file' regex.
+     * This method intercepts any GET, DELETE, PUT and PROPFIND. 
      *
      * @param RequestInterface  $request
      * @param ResponseInterface $response
@@ -102,8 +105,11 @@ class Plugin extends ServerPlugin {
         switch ($request->getMethod()) {
             case 'PUT':
                 $this->httpPut($request, $response);
+                break;
+            case 'POST': 
+                $this->httpPost($request, $response);
+            return;
         }
-        return;
     }
     
     
@@ -131,6 +137,111 @@ class Plugin extends ServerPlugin {
     }
 
     /**
+     * This method handles the POST method.
+     *
+     * @param RequestInterface  $request
+     *
+     * @return bool
+     */
+    function httpPost(RequestInterface $request, ResponseInterface $response) {
+        $postVars = $request->getPostData();
+        $body = $request->getBodyAsString();
+        if (isset($postVars['baikalStorage']))  {
+          foreach ($this->storageManager->getStorages() as $storage) {
+            if ($storage::NAME == $postVars['baikalStorage'] 
+              && $postVars['baikalStorageAction'] == 'saveConfigs') {
+              $updateStorageConfigs = $storage->updateConfigs($postVars);
+              $this->rawConfigs['storages'][$postVars['baikalStorage']] = $updateStorageConfigs;
+            }
+          }
+
+        }
+        if (isset($postVars['logLevel'])) {
+          $this->rawConfigs['general']['logger']['level'] = $postVars['logLevel'];
+        }
+        if (isset($postVars['logFilePath'])) {
+          $this->rawConfigs['general']['logger']['file'] = $postVars['logFilePath'];
+        }
+
+        $this->config->saveConfigs($this->rawConfigs);
+
+        $response->setHeader('Location', $request->getUrl());
+        $response->setStatus(302);
+        $request->setBody($body);
+
+
+    } 
+
+    /**
+     * Generates the 'general' configuration section
+     * @return string
+     */
+
+    public function generateGeneralConfigSection() {
+      $configuredLogLevel = '';
+      $logFilePath = '';
+      if (isset($this->rawConfigs['general'])
+        && isset($this->rawConfigs['general']['logger']) 
+        && $this->rawConfigs['general']['logger']['enabled']) {
+        $configuredLogLevel = $this->rawConfigs['general']['logger']['level'];
+        $logFilePath = $this->rawConfigs['general']['logger']['file'];
+      }
+      $html  = '<form method="post" action="">';
+      $html .= '<section><h1>Configuration - Baikal Storage</h1>';
+      $html .= '<section><h2>general</h2>';
+      $html .= '<table class="propTable">';
+      $html .= '<tr>';
+      $html .= '<th>log level</th>';
+      $html .= '<td>The minimum log level </td>';
+      $html .=  '<td>';
+      $html .= '<select name="logLevel">';
+
+      foreach (Monolog::getLevels() as $key => $value) {
+        if ($key == $configuredLogLevel) {
+          $selected = ' selected ';
+        } else {
+          $selected = '';
+        }
+        $html .= '<option value="'. $key .'"' . $selected . '>'. $key .'</option>';
+      }
+      $html .= '</select>';
+
+      $html .= '</tr>';
+      $html .= '<tr>';
+      $html .= '<th>log file path</th>';
+      $html .= '<td>The absolute file path of the log</td>';
+      $html .= '<td><input name="logFilePath" placeholder="/opt/baikal/log" value='. $logFilePath . ' type="text" id="logFilePath"></input></td>';
+      $html .= '</tr>';
+      $html .= '<tr>';
+      $html .= '</table>';
+      $html .= '</section>';
+      return $html;
+    }
+
+    /**
+     * Returns a html to display an optional configuration page for the plugin
+     * @return array
+     */
+    public function getConfigBrowser() {
+      $html = $this->generateGeneralConfigSection();
+
+      foreach ($this->storageManager->getStorages() as $storage) {
+        $html .= '<section>';
+        $html .= '<h2>' . $storage::NAME . '</h2>';
+        $html .= '<table class="propTable">';
+        $html .= '<input type="hidden" name="baikalStorageAction" value="saveConfigs"></input>';
+        $html .= '<input type="hidden" name="baikalStorage" value="taskwarrior"></input>';
+        $html .= $storage->getConfigBrowser();
+        $html .= '</table>';
+        $html .= '</section>';
+        $html .= '<input type="submit" value="save"></input>';
+        $html .= '</form>';
+      }
+
+      return $html;
+    }
+
+    /**
      * Returns a bunch of meta-data about the plugin.
      *
      * Providing this information is optional, and is mainly displayed by the
@@ -147,6 +258,7 @@ class Plugin extends ServerPlugin {
         'name'        => $this->getPluginName(),
         'description' => 'The plugin provides synchronization between taskwarrior tasks and iCAL events',
         'link'        => null,
+        'config'      => true
       ];
 
     }

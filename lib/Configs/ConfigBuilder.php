@@ -6,7 +6,6 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Yaml\Yaml;
-use Carbon\CarbonTimeZone;
 
 class ConfigBuilder implements ConfigurationInterface {
   private $configs = [];
@@ -40,14 +39,7 @@ class ConfigBuilder implements ConfigurationInterface {
                     ->end() 
                   ->end() 
                 ->end() 
-                ->scalarNode('timezone')
-                  ->defaultValue('UTC')
-                    ->validate()
-                      ->IfNotInArray(CarbonTimeZone::listIdentifiers())
-                      ->thenInvalid('Invalid timezone identifier %s')
-                    ->end() 
-                  ->end() 
-                ->end() 
+               ->end() 
               ->end() 
             ->arrayNode('storages')
                 ->children();
@@ -66,5 +58,10 @@ class ConfigBuilder implements ConfigurationInterface {
     $contents = $this->readContent();
     $parseContents = Yaml::parse($contents);
     return $this->processor->processConfiguration($this, [$parseContents]);
+  }
+
+  public function saveConfigs($configs) {
+    $yaml = Yaml::dump($configs, 3, 2);
+    file_put_contents($this->configFile, $yaml);
   }
 }

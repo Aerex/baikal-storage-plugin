@@ -69,4 +69,10 @@ class Logger {
     }
   } 
 
+  public function setLevel($level) {
+    if ($this->configs['enabled']) {
+      $this->logger->setLevel($level);
+    }
+  }
+
 }

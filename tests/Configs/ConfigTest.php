@@ -26,8 +26,6 @@ class ConfigTest extends TestCase {
     $this->assertEquals($generalConfigs['logger']['level'], 'ERROR', 'ERROR is not set as default logger level');
     $this->assertArrayHasKey('enabled', $generalConfigs['logger'], 'general config logger enabled property is missing');
     $this->assertTrue($generalConfigs['logger']['enabled']);
-    $this->assertArrayHasKey('timezone', $generalConfigs, 'general config is missing timezone property');
-    $this->assertEquals($generalConfigs['timezone'], 'UTC', 'UTC is not set as default timezone');
   }
 
   public function testTaskwarriorConfig() {
@@ -42,8 +40,8 @@ class ConfigTest extends TestCase {
     $this->assertEquals($taskwarriorConfigs['taskrc'], '/home/aerex/.taskrc');
     $this->assertArrayHasKey('taskdata', $taskwarriorConfigs, 'taskwarrior config is missing taskdata property');
     $this->assertEquals($taskwarriorConfigs['taskdata'], '/home/aerex/.task');
-    $this->assertArrayHasKey('project_tag_suffix', $taskwarriorConfigs, 'taskwarrior config is missing project_tag_suffix property');
-    $this->assertEquals($taskwarriorConfigs['project_tag_suffix'], 'project_');
+    $this->assertArrayHasKey('project_category_prefix', $taskwarriorConfigs, 'taskwarrior config is missing project_category_prefix property');
+    $this->assertEquals($taskwarriorConfigs['project_category_prefix'], 'project_');
   }
 }
 

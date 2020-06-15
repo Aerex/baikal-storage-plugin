@@ -2,9 +2,8 @@ general:
   logger:
     file: /home/aerex/baikal-storage-plugin.log
     level: DEBUG
-  timezone: 'America/Denver'
 storages:
   taskwarrior:
     taskdata: /home/aerex/.task
     taskrc: /home/aerex/.taskrc
-    project_tag_suffix: project_
+    project_category_prefix: project_
