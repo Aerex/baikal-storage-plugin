@@ -16,6 +16,7 @@ class Console extends AbstractConsole {
     if (is_array($input)) {
       return json_encode($input); 
     }
+    return $input;
   }
 
   public function execute($cmd, $args, $input = null, $envs = []) {

@@ -46,4 +46,17 @@ class StorageManager {
       $storage->save($calendar);
     }
   }
+
+  public function remove($uid) {
+    if (!isset($this->configs)) {
+      throw new \Exception('StorageManger was not initialize or configs are not defined'); 
+    }
+    foreach ($this->configs['storages'] as $key => $value) {
+      $storage = $this->storages[$key];
+      if (!isset($storage)){
+        throw new \Exception();
+      }
+      $storage->remove($uid);
+    }
+  }
 }

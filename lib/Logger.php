@@ -45,6 +45,11 @@ class Logger {
       $this->logger->notice($message);
     }
   } 
+  public function warn($message) {
+    if ($this->configs['enabled']) {
+      $this->logger->warning($message);
+    }
+  } 
 
   public function error($message) {
     if ($this->configs['enabled']) {
@@ -68,11 +73,5 @@ class Logger {
       $this->logger->emergency($message);
     }
   } 
-
-  public function setLevel($level) {
-    if ($this->configs['enabled']) {
-      $this->logger->setLevel($level);
-    }
-  }
 
 }

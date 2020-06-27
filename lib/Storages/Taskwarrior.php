@@ -98,13 +98,13 @@ class Taskwarrior implements IStorage {
               break;
             }
           }
-          array_push(['description' => $descriptionLine, 'entry' => $annotationEntry]);
+          array_push($annotations, ['description' => $descriptionLine, 'entry' => $annotationEntry]);
+          $task['annotations'] = $annotations;
       }
     }
-
     if (!isset($task['entry'])){
       $task['entry'] = $vtodo->DTSTAMP->getDateTime()->format(\DateTime::ISO8601);
-    }
+    } 
 
     if (isset($vtodo->DTSTART)) {
       $task['start'] = $vtodo->DTSTART->getDateTime()->format(\DateTime::ISO8601);
@@ -177,11 +177,6 @@ class Taskwarrior implements IStorage {
         }
       }
 
-    if (isset($vtodo->{'RELATED-TO'}) && isset($this->tasks[(string)$vtodo->{'RELATED-TO'}])) {
-      $relatedTask = $this->tasks[(string)$vtodo->{'RELATED-TO'}];
-      $task['depends'] = $relatedTask['uuid'];
-    }
-
     if (isset($vtodo->GEO)){
       $task['geo'] = $vtodo->GEO->getRawMimeDirValue();
     }
@@ -208,5 +203,32 @@ class Taskwarrior implements IStorage {
       $this->logger->error($e->getTraceAsString());
       throw $e;
     }
+  }
+
+  public function remove($uid) {
+    try {
+      $this->logger->info(sprintf('Deleting iCal %s from taskwarrior', $uid));
+      $this->refresh();
+      $task = $this->tasks[(string)$uid];
+      if (isset($task) && $task['status'] !== 'deleted') {
+        $uuid = $task['uuid'];
+        $this->logger->info(
+          sprintf('Executing TASKRC = %s TASKDATA = %s task delete %s', $this->configs['taskrc'], $this->configs['taskdata'], $uuid) 
+        );
+        $output = $this->console->execute('task', ['delete', (string)$uuid], null, 
+          ['TASKRC' => $this->configs['taskrc'],'TASKDATA' => $this->configs['taskdata']]);
+        $this->logger->info($output);
+      } else if (isset($task) && $task['status'] === 'deleted') {
+        $this->logger->warn(sprintf('Task %s has already been deleted', $task['uuid']));
+      } else {
+        $this->logger->error(sprintf('Could not find task for iCal %s to be deleted', $uid));
+      }
+
+    } catch (\Exception $e) {
+      $this->logger->error($e->getMessage());
+      $this->logger->error($e->getTraceAsString());
+      throw $e;
+    }
+
   }
 }

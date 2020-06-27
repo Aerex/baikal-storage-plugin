@@ -61,7 +61,7 @@ class Plugin extends ServerPlugin {
      */
 
     public function initializeStorages($configs) {
-      $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 'rc.hooks=off']),  $configs, new Logger($configs, 'Taskwarrior'));
+      $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 'rc.hooks=off', 'rc.confirmation=no']),  $configs, new Logger($configs, 'Taskwarrior'));
       $this->storageManager->addStorage(Taskwarrior::NAME, $taskwarrior); 
     }
 
@@ -108,6 +108,9 @@ class Plugin extends ServerPlugin {
                 break;
             case 'POST': 
                 $this->httpPost($request, $response);
+                break;
+            case 'DELETE':
+                $this->httpDelete($request);
             return;
         }
     }
@@ -141,7 +144,6 @@ class Plugin extends ServerPlugin {
      *
      * @param RequestInterface  $request
      *
-     * @return bool
      */
     function httpPost(RequestInterface $request, ResponseInterface $response) {
         $postVars = $request->getPostData();
@@ -169,8 +171,34 @@ class Plugin extends ServerPlugin {
         $response->setStatus(302);
         $request->setBody($body);
 
-
     } 
+    /**
+     * This method handles the DELETE method.
+     *
+     * @param RequestInterface  $request
+     * @param ResponseInterface  $response
+     *
+     */
+
+    public function httpDelete(RequestInterface $request) {
+      try {
+        $body = $request->getBodyAsString();
+        $path = $request->getPath();
+        $paths = explode('/', $path);
+        if (sizeof($paths) > 1) {
+          $uid = str_replace('.ics', '', $paths[sizeof($paths)-1]);
+          $this->storageManager->remove($uid);
+        }
+      } catch(BadRequest $e){
+        throw new BadRequest($e->getMessage(), null, $e);
+      } catch(\Exception $e){
+        throw new \Exception($e->getMessage(), null, $e);
+      }
+      $request->setBody($body);
+
+    }
+
+    
 
     /**
      * Generates the 'general' configuration section

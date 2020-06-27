@@ -6,6 +6,7 @@ use Sabre\VObject\Component\VCalendar as Calendar;
 
 interface IStorage {
  public function save(Calendar $c);
+ public function remove($uid);
  public function refresh();
  public function getConfigBrowser();
  public function updateConfigs($postData);
