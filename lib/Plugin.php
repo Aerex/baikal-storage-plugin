@@ -114,6 +114,7 @@ class Plugin extends ServerPlugin {
             return;
         }
     }
+
     
     
 
@@ -127,12 +128,14 @@ class Plugin extends ServerPlugin {
     function httpPut(RequestInterface $request){
       $body = $request->getBodyAsString();
       $vCal = \Sabre\VObject\Reader::read($body);
-      try {
-        $this->storageManager->import($vCal);
-      } catch(BadRequest $e){
+      if (!stristr($vCal->PRODID, 'taskwarrior')) {
+        try {
+          $this->storageManager->import($vCal);
+        } catch(BadRequest $e){
           throw new BadRequest($e->getMessage(), null, $e);
-      } catch(\Exception $e){
+        } catch(\Exception $e){
           throw new \Exception($e->getMessage(), null, $e);
+        }
       }
 
       $request->setBody($body);

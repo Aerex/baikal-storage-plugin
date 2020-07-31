@@ -6,10 +6,10 @@ composer require aerex/baikal-storage-plugin
 ```
 
 ## Configuration
-Copy sample configuration to your baikal installation. Make sure that the folder is *writable* by your webserver (e.g Apache, Nginx)
+Create the `config.yaml` to your webserver. Make sure the file is *writable* by your webserver (e.g Apache, Nginx). For more details on the configuration details see the wiki page.
 
 ## Usage
 - Add the plugin to `Core/Frameworks/Baikal/Core/Server.php` 
 ```
-$this->server->addPlugin(new \Aerex\BaikalStorage\Plugin(<path-of-config-file>))
+$this->server->addPlugin(new \Aerex\BaikalStorage\Plugin(<absolute/path/of/config/file>))
 ```
