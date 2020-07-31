@@ -110,8 +110,8 @@ class Taskwarrior implements IStorage {
       $task['start'] = $vtodo->DTSTART->getDateTime()->format(\DateTime::ISO8601);
     }
 
-    if (isset($vtodo->DTEND)){
-      $task['end'] = $vtodo->DTEND->getDateTime()->format(\DateTime::ISO8601);
+    if (isset($vtodo->COMPLETED)){
+      $task['end'] = $vtodo->COMPLETED->getDateTime()->format(\DateTime::ISO8601);
     }
 
     if (isset($vtodo->{'LAST-MODIFIED'})) {
