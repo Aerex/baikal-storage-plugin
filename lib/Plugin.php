@@ -188,9 +188,12 @@ class Plugin extends ServerPlugin {
         $body = $request->getBodyAsString();
         $path = $request->getPath();
         $paths = explode('/', $path);
-        if (sizeof($paths) > 1) {
+        if (isset($paths) && sizeof($paths) > 1) {
           $uid = str_replace('.ics', '', $paths[sizeof($paths)-1]);
-          $this->storageManager->remove($uid);
+          // Check if deleting an ics file 
+          if ($uid != '') {
+            $this->storageManager->remove($uid);
+          }
         }
       } catch(BadRequest $e){
         throw new BadRequest($e->getMessage(), null, $e);

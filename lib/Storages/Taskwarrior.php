@@ -209,6 +209,10 @@ class Taskwarrior implements IStorage {
     try {
       $this->logger->info(sprintf('Deleting iCal %s from taskwarrior', $uid));
       $this->refresh();
+      if (!array_key_exists((string)$uid, $this->tasks)) {
+        $this->logger->warn(sprintf('Could not find task %s to delete. Skipping', (string)$uid));
+        return;
+      }
       $task = $this->tasks[(string)$uid];
       if (isset($task) && $task['status'] !== 'deleted') {
         $uuid = $task['uuid'];
