@@ -8,8 +8,8 @@
   beStrictAboutTestsThatDoNotTestAnything="true">
 
 
-<testsuite name="Baikal Storage Plug Tests">
-  <directory>./lib/tests/</directory>
+<testsuite name="Baikal Storage Plugin Tests">
+  <directory>./tests/</directory>
 </testsuite>
 
 <filter>
