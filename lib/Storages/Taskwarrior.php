@@ -33,11 +33,6 @@ class Taskwarrior implements IStorage {
     $html .= '<td>The environment variable overrides the default and the command line, and the "data.location" configuration setting of the task data directory</td>';
     $html .= '<td><input name="tw_taskdata" type="text" value="' . $this->configs['taskdata'] . '"></td>';
     $html .= '</tr>';
-    $html .= '<tr>';
-    $html .= '<th>project_category_prefix</th>';
-    $html .= "<td>The word after the given prefix for a iCal category will be used to identify a task's project</td>";
-    $html .= '<td><input name="tw_project_category_prefix" placeholder ="project_" name="tw_project_category_prefix" type="text" value="' . $this->configs['project_category_prefix'] . '"></td>';
-    $html .= '</tr>';
     return $html;
   }
 
@@ -48,10 +43,6 @@ class Taskwarrior implements IStorage {
 
     if (isset($postData['tw_taskdata'])){
       $this->configs['taskdata'] = $postData['tw_taskdata'];
-    }
-
-    if (isset($postData['tw_project_category_prefix'])){
-      $this->configs['project_category_prefix'] = $postData['tw_project_category_prefix'];
     }
 
     return $this->configs;
@@ -164,18 +155,8 @@ class Taskwarrior implements IStorage {
     }
 
     if (isset($vtodo->CATEGORIES)) {
-      $task['tags'] = [];
-        foreach ($vtodo->CATEGORIES as $category) {
-          if (isset($this->configs['project_category_prefix'])) {
-            $projTagSuffixRegExp = sprintf('/^%s/', $this->configs['project_category_prefix']);
-            if (preg_match($projTagSuffixRegExp, $category)) {
-              $task['project'] = preg_replace($projTagSuffixRegExp, '', $category);
-              continue;
-            }
-          }
-          $task['tags'] = $category;
-        }
-      }
+      $task['tags'] = $vtodo->CATEGORIES->getJsonValue();
+    }
 
     if (isset($vtodo->GEO)){
       $task['geo'] = $vtodo->GEO->getRawMimeDirValue();

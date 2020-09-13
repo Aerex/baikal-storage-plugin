@@ -17,10 +17,6 @@ class TaskwarriorConfig {
                   ->defaultValue('~/.taskrc')
                   ->info('The enivronment variable overrides the default and the command line specification of the .taskrc file')
                 ->end()
-                ->scalarNode('project_category_prefix')
-                  ->defaultValue('project_')
-                  ->info('The word after the given prefix for a iCal category will be used to identify a task\'s project')
-                ->end()
               ->end();
 
     return $node;

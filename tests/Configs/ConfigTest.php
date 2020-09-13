@@ -40,8 +40,6 @@ class ConfigTest extends TestCase {
     $this->assertEquals($taskwarriorConfigs['taskrc'], '/home/aerex/.taskrc');
     $this->assertArrayHasKey('taskdata', $taskwarriorConfigs, 'taskwarrior config is missing taskdata property');
     $this->assertEquals($taskwarriorConfigs['taskdata'], '/home/aerex/.task');
-    $this->assertArrayHasKey('project_category_prefix', $taskwarriorConfigs, 'taskwarrior config is missing project_category_prefix property');
-    $this->assertEquals($taskwarriorConfigs['project_category_prefix'], 'project_');
   }
 }
 

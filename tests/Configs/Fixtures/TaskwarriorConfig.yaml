@@ -6,4 +6,3 @@ storages:
   taskwarrior:
     taskdata: /home/aerex/.task
     taskrc: /home/aerex/.taskrc
-    project_category_prefix: project_
