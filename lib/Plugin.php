@@ -12,6 +12,7 @@ use Sabre\HTTP\RequestInterface;
 use Sabre\HTTP\ResponseInterface;
 use Sabre\DAV\ServerPlugin;
 use Sabre\DAV\Server;
+use Sabre\DAV\PropFind;
 
 /**
  * The plugin to interact with Baikal and external storages 
@@ -47,6 +48,14 @@ class Plugin extends ServerPlugin {
       $this->rawConfigs = $this->buildConfigurations($configFile);
       $this->storageManager = new StorageManager($this->rawConfigs);
       $this->initializeStorages($this->rawConfigs);
+    }
+
+    private function getDisplayName($path) {
+      $node = $this->server->tree->getNodeForPath($path);
+      $propFind = new PropFind($path, []);
+      $properties = $this->server->getPropertiesByNode($propFind, $node);  
+      return $properties['d:displayname'] ?? '';
+
     }
 
     public function buildConfigurations($configFile) {
@@ -114,7 +123,6 @@ class Plugin extends ServerPlugin {
             return;
         }
     }
-
     
     
 
@@ -128,14 +136,15 @@ class Plugin extends ServerPlugin {
     function httpPut(RequestInterface $request){
       $body = $request->getBodyAsString();
       $vCal = \Sabre\VObject\Reader::read($body);
-      if (!stristr($vCal->PRODID, 'taskwarrior')) {
-        try {
-          $this->storageManager->import($vCal);
-        } catch(BadRequest $e){
-          throw new BadRequest($e->getMessage(), null, $e);
-        } catch(\Exception $e){
-          throw new \Exception($e->getMessage(), null, $e);
+      $displayname = $this->getDisplayName($request->getPath());
+      try {
+        if (!stristr($vCal->PRODID, 'taskwarrior')) {
+          $this->storageManager->import($vCal, $displayname);
         }
+      } catch(BadRequest $e){
+          throw new BadRequest($e->getMessage(), null, $e);
+      } catch(\Exception $e){
+          throw new \Exception($e->getMessage(), null, $e);
       }
 
       $request->setBody($body);
@@ -188,9 +197,9 @@ class Plugin extends ServerPlugin {
         $body = $request->getBodyAsString();
         $path = $request->getPath();
         $paths = explode('/', $path);
-        if (isset($paths) && sizeof($paths) > 1) {
+        if (sizeof($paths) > 1) {
           $uid = str_replace('.ics', '', $paths[sizeof($paths)-1]);
-          // Check if deleting an ics file 
+          // Attempt to delete if we are removing an ics file
           if ($uid != '') {
             $this->storageManager->remove($uid);
           }
@@ -297,3 +306,4 @@ class Plugin extends ServerPlugin {
 
     }
 }
+

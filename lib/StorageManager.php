@@ -34,7 +34,7 @@ class StorageManager {
    $this->storages[$name] = $storage; 
   }
 
-  public function import(Calendar $calendar) {
+  public function import(Calendar $calendar, string $displayname) {
     if (!isset($this->configs)) {
       throw new \Exception('StorageManger was not initialize or configs are not defined'); 
     }
@@ -43,7 +43,7 @@ class StorageManager {
       if (!isset($storage)){
         throw new \Exception();
       }
-      $storage->save($calendar);
+      $storage->save($calendar, $displayname);
     }
   }
 
@@ -60,3 +60,4 @@ class StorageManager {
     }
   }
 }
+
