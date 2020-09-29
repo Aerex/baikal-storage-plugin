@@ -303,7 +303,7 @@ class Plugin extends ServerPlugin {
 
       return [
         'name'        => $this->getPluginName(),
-        'description' => 'The plugin provides synchronization between taskwarrior tasks and iCAL events',
+        'description' => 'The plugin provides synchronization between remote storages and iCAL todo events',
         'link'        => null,
         'config'      => true
       ];
