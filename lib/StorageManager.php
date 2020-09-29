@@ -22,6 +22,18 @@ class StorageManager {
     $this->configs = $configs; 
   }
 
+  public function fromStorageSource(Calendar $calendar) {
+    if (!isset($this->configs)) {
+      throw new \Exception('StorageManager was not initialize or configs are not defined');
+    }
+    foreach ($this->configs['storages'] as $storage => $value) {
+      if (stristr($calendar->PRODID, $storage)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public function getStorages() {
     return $this->storages;
   } 

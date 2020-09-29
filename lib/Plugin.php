@@ -51,8 +51,12 @@ class Plugin extends ServerPlugin {
     }
 
     private function getDisplayName($path) {
-      $node = $this->server->tree->getNodeForPath($path);
-      $propFind = new PropFind($path, []);
+      // Remove filepath
+      $urlParts = explode('/', $path);
+      $calendarUrl = implode('/', array_slice($urlParts, 0, count($urlParts)-1));
+
+      $node = $this->server->tree->getNodeForPath($calendarUrl);
+      $propFind = new PropFind($calendarUrl, []);
       $properties = $this->server->getPropertiesByNode($propFind, $node);  
       return $properties['d:displayname'] ?? '';
 
@@ -138,7 +142,7 @@ class Plugin extends ServerPlugin {
       $vCal = \Sabre\VObject\Reader::read($body);
       $displayname = $this->getDisplayName($request->getPath());
       try {
-        if (!stristr($vCal->PRODID, 'taskwarrior')) {
+        if (!$this->storageManager->fromStorageSource($vCal)) {
           $this->storageManager->import($vCal, $displayname);
         }
       } catch(BadRequest $e){
