@@ -12,7 +12,6 @@ use Sabre\HTTP\RequestInterface;
 use Sabre\HTTP\ResponseInterface;
 use Sabre\DAV\ServerPlugin;
 use Sabre\DAV\Server;
-use Sabre\DAV\PropFind;
 
 /**
  * The plugin to interact with Baikal and external storages 
@@ -34,9 +33,10 @@ class Plugin extends ServerPlugin {
      */
     protected $storageManager;
 
+    /**
+     * @var $rawconfigs 
+     */
     protected $rawConfigs;
-
-
     
     /**
      * Creates the Storage plugin
@@ -51,15 +51,13 @@ class Plugin extends ServerPlugin {
     }
 
     private function getDisplayName($path) {
-      // Remove filepath
+      // Remove filepath (e.g Remove xxxx.ics from calendars/collection_name/xxxx.ics)
       $urlParts = explode('/', $path);
-      $calendarUrl = implode('/', array_slice($urlParts, 0, count($urlParts)-1));
+      $calendarUrl = implode('/', array_slice($urlParts, 0, sizeof($urlParts)-1));
 
-      $node = $this->server->tree->getNodeForPath($calendarUrl);
-      $propFind = new PropFind($calendarUrl, []);
-      $properties = $this->server->getPropertiesByNode($propFind, $node);  
-      return $properties['d:displayname'] ?? '';
-
+      // Get displayname from collection
+      $properties = $this->server->getProperties($calendarUrl, ['{DAV:}displayname']);
+      return $properties['{DAV:}displayname'] ?? '';
     }
 
     public function buildConfigurations($configFile) {
@@ -303,8 +301,8 @@ class Plugin extends ServerPlugin {
 
       return [
         'name'        => $this->getPluginName(),
-        'description' => 'The plugin provides synchronization between remote storages and iCAL todo events',
-        'link'        => null,
+        'description' => 'The plugin provides synchronization between remote storages and iCal todo events',
+        'link'        => 'https://git.aerex.me/Aerex/baikal-storage-plugin',
         'config'      => true
       ];
 
