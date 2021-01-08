@@ -16,7 +16,7 @@
         }
     ],
     "bin": [
-      "bin/generateconfig"
+      "bin/console"
     ],
     "require": {
         "php": ">=5.5",

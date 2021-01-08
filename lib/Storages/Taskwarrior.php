@@ -123,8 +123,10 @@ class Taskwarrior implements IStorage {
       }
     }
 
-    if (isset($vtodo->DUE)){
+    if (isset($vtodo->DUE)) {
       $task['due'] = $vtodo->DUE->getDateTime()->format(\DateTime::ISO8601);
+    } else if (isset($task['due'])) {
+      $task['due'] = '';
     }
 
     if (isset($vtodo->RRULE)) {
