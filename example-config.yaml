@@ -1,6 +1,6 @@
 logger:
-  file: /home/aerex/baikal-storage-plugin.log
+  file: /home/user/baikal-storage-plugin.log
   level: 'DEBUG'
 taskwarrior:
-  taskdata: /home/aerex/.task
-  taskrc: /home/aerex/.taskrc
+  taskdata: /home/user/.task
+  taskrc: /home/user/.taskrc
