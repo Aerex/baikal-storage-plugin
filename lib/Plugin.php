@@ -72,7 +72,8 @@ class Plugin extends ServerPlugin {
      */
 
     public function initializeStorages($configs) {
-      $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 'rc.hooks=off', 'rc.confirmation=no']),  $configs, new Logger($configs, 'Taskwarrior'));
+        $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 
+                'rc.hooks=off', 'rc.confirmation=no']),  $configs, new Logger($configs, 'Taskwarrior'));
       $this->storageManager->addStorage(Taskwarrior::NAME, $taskwarrior); 
     }
 
@@ -125,8 +126,6 @@ class Plugin extends ServerPlugin {
             return;
         }
     }
-    
-    
 
     /**
      * This method handles the PUT method.
