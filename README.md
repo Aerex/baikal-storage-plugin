@@ -1,5 +1,8 @@
 # baikal-storage-plugin
 
+## Note
+Plugin is still a work in progress
+
 ## Install
 ```
 composer require aerex/baikal-storage-plugin
