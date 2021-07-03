@@ -8,4 +8,5 @@ use Aerex\BaikalStorage\Commands\CreateConfigFileCommand;
 $application = new Application();
 
 $application->add(new CreateConfigFileCommand());
+$application->setName('Baikal Storage Plugin');
 $application->run();
