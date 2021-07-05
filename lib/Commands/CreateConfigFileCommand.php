@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Aerex\BaikalStorage\Commands;
 
 use Symfony\Component\Console\Command\Command;
@@ -11,8 +10,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Monolog\Logger as Monolog;
 use Aerex\BaikalStorage\Configs\ConfigBuilder;
-
-
 
 class CreateConfigFileCommand extends Command {
   protected $io;
@@ -33,12 +30,12 @@ class CreateConfigFileCommand extends Command {
     $configs['taskrc'] = $taskrcFilePath;
     $filePath = $this->io->askQuestion(new Question('Where is the data location (taskdata)'));
     $taskDataFilePath = $filePath;
-    if (!file_exists($taskDataFilePath)) { 
+    if (!file_exists($taskDataFilePath)) {
       throw new \RuntimeException("The task.data location $taskDataFilePath does not exist");
-    } 
+    }
     $configs['taskdata'] = $taskDataFilePath;
     $displayName = $this->io->askQuestion(new Question('What is the displayname for the default calendar (e.g default)'));
-    $configs['default_calendar'] = isset($displayName) ? $displayName : 'default'; 
+    $configs['default_calendar'] = isset($displayName) ? $displayName : 'default';
     $this->configs['storages']['taskwarior'] = $configs;
   }
 
@@ -48,22 +45,46 @@ class CreateConfigFileCommand extends Command {
       ->setDescription('Create baikal storage plugin configuration file');
     }
 
+  protected function autocompleteFilePathCallback(string $input): array {
+      // Strip any characters from the last slash to the end of the string
+      // to keep only the last directory and generate suggestions for it
+      $inputPath = preg_replace('%(/|^)[^/]*$%', '$1', $input);
+      $inputPath = '' === $inputPath ? '.': $inputPath;
+
+      $foundFilesAndDirs = scandir($inputPath) ?: [];
+
+      // Excluded restricted directories
+      $restrictedDirs = ['dev', 'bin', 'boot', 'etc', 'input', 'lib',
+          'lib64', 'mnt', 'proc', 'run', 'sbin', 'sys', 'srv', 'usr', 'var'];
+      $foundSafeFileAndDirs = array_diff($foundFilesAndDirs, $restrictedDirs);
+
+      return array_map(function($dirOrFile) use ($inputPath) {
+          return $inputPath.$dirOrFile;
+      }, $foundSafeFileAndDirs);
+  }
+
   protected function execute(InputInterface $input, OutputInterface $output) {
     $this->io = new SymfonyStyle($input, $output);
 
     $this->io->title('Baikal Storage Plugin Configuration Creation');
 
-    $filePath = $this->io->askQuestion(new Question('Where to create `config.yaml` configuration file?'));
-    $this->fullFilePath = $this->verifyFileCanBeCreated($filePath, CreateConfigFileCommand::$CONFIG_FILE_NAME);
+    // TODO: move create config file code block to function
+    $question = new Question('Where to create `config.yaml` configuration file?');
+    $question->setAutocompleterCallback($this->autocompleteFilePathCallback);
+    $filePath = $this->io->askQuestion($question);
 
-    $this
-      ->setupGeneralConfigs()
-      ->setupStorages()
-      ->saveConfigs();
+    try {
+        $this->fullFilePath = $this->verifyAndCreateFile($filePath, CreateConfigFileCommand::$CONFIG_FILE_NAME);
+        $this->setupGeneralConfigs()
+            ->setupStorages()
+            ->saveConfigs();
+    } catch (\Exception $e) {
+        return Command::FAILURE;
+    }
 
-    // or return this if some error happened during the execution
-    // (it's equivalent to returning int(1))
-    // return Command::FAILURE;
+    $this->output->writeln("`config.yaml file created at $filePath");
+
+    return Command::SUCCESS;
   }
 
   protected function getStorageNames() {
@@ -74,13 +95,13 @@ class CreateConfigFileCommand extends Command {
     }));
     array_walk($storages, function(&$storage) {
       $storage = strtolower(preg_replace('/\.php/', '', $storage));
-    }); 
+    });
     return $storages;
   }
 
-  protected function verifyFileCanBeCreated($filePath, $fileName) {
+  protected function verifyAndCreateFile($filePath, $fileName) {
     if (empty($filePath)) {
-      throw new \RuntimeException('Configuration file path cannot be empty'); 
+      throw new \RuntimeException('Configuration file path cannot be empty');
     }
 
     if (!is_dir($filePath)) {
@@ -105,7 +126,7 @@ class CreateConfigFileCommand extends Command {
     if ($this->io->confirm('Enable logging?')) {
       $this->configs['general']['logger'] = [];
       $logFilePath = $this->io->askQuestion(new Question('Where to create log file?'));
-      $this->configs['general']['logger']['file'] = $this->verifyFileCanBeCreated($logFilePath, CreateConfigFileCommand::$LOGGER_FILE_NAME);
+      $this->configs['general']['logger']['file'] = $this->verifyAndCreateFile($logFilePath, CreateConfigFileCommand::$LOGGER_FILE_NAME);
 
       $logLevelChoiceQuestion = new ChoiceQuestion('Log level (defaults to ERROR)', array_keys(Monolog::getLevels()), 4);
       $logLevelChoiceQuestion->setErrorMessage('Log level %s is invalid');
@@ -128,11 +149,10 @@ class CreateConfigFileCommand extends Command {
       $storageConfigMethod->invoke($this);
     }
     return $this;
-  } 
+  }
 
   protected function saveConfigs() {
     $configBuilder = new ConfigBuilder($this->fullFilePath);
     $configBuilder->saveConfigs($this->configs);
   }
-
 }
