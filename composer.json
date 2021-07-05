@@ -12,7 +12,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://git.aerex.me/Aerex/baikal-storage-plugin"
+            "url": "https://github.com/Aerex/baikal-storage-plugin"
         }
     ],
     "bin": [
