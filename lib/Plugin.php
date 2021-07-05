@@ -14,7 +14,7 @@ use Sabre\DAV\ServerPlugin;
 use Sabre\DAV\Server;
 
 /**
- * The plugin to interact with Baikal and external storages 
+ * The plugin to interact with Baikal and external storages
  *
  */
 class Plugin extends ServerPlugin {
@@ -34,10 +34,10 @@ class Plugin extends ServerPlugin {
     protected $storageManager;
 
     /**
-     * @var $rawconfigs 
+     * @var $rawconfigs
      */
     protected $rawConfigs;
-    
+
     /**
      * Creates the Storage plugin
      *
@@ -47,11 +47,12 @@ class Plugin extends ServerPlugin {
     function __construct($configFile){
       $this->rawConfigs = $this->buildConfigurations($configFile);
       $this->storageManager = new StorageManager($this->rawConfigs);
+      $this->logger = new Logger($this->rawConfigs, 'BaikalStorage');
       $this->initializeStorages($this->rawConfigs);
     }
 
     private function getDisplayName($path) {
-      // Remove filepath (e.g Remove xxxx.ics from calendars/collection_name/xxxx.ics)
+      // Remove filepath
       $urlParts = explode('/', $path);
       $calendarUrl = implode('/', array_slice($urlParts, 0, sizeof($urlParts)-1));
 
@@ -72,9 +73,9 @@ class Plugin extends ServerPlugin {
      */
 
     public function initializeStorages($configs) {
-        $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing', 
+        $taskwarrior = new Taskwarrior(new Console(['rc.verbose=nothing',
                 'rc.hooks=off', 'rc.confirmation=no']),  $configs, new Logger($configs, 'Taskwarrior'));
-      $this->storageManager->addStorage(Taskwarrior::NAME, $taskwarrior); 
+      $this->storageManager->addStorage(Taskwarrior::NAME, $taskwarrior);
     }
 
     /**
@@ -104,7 +105,7 @@ class Plugin extends ServerPlugin {
     /**
      * This method is called before any HTTP method handler.
      *
-     * This method intercepts any GET, DELETE, PUT and PROPFIND. 
+     * This method intercepts any GET, DELETE, PUT and PROPFIND.
      *
      * @param RequestInterface  $request
      * @param ResponseInterface $response
@@ -118,7 +119,7 @@ class Plugin extends ServerPlugin {
             case 'PUT':
                 $this->httpPut($request, $response);
                 break;
-            case 'POST': 
+            case 'POST':
                 $this->httpPost($request, $response);
                 break;
             case 'DELETE':
@@ -163,7 +164,7 @@ class Plugin extends ServerPlugin {
         $body = $request->getBodyAsString();
         if (isset($postVars['baikalStorage']))  {
           foreach ($this->storageManager->getStorages() as $storage) {
-            if ($storage::NAME == $postVars['baikalStorage'] 
+            if ($storage::NAME == $postVars['baikalStorage']
               && $postVars['baikalStorageAction'] == 'saveConfigs') {
               $updateStorageConfigs = $storage->updateConfigs($postVars);
               $this->rawConfigs['storages'][$postVars['baikalStorage']] = $updateStorageConfigs;
@@ -184,7 +185,7 @@ class Plugin extends ServerPlugin {
         $response->setStatus(302);
         $request->setBody($body);
 
-    } 
+    }
     /**
      * This method handles the DELETE method.
      *
@@ -214,7 +215,7 @@ class Plugin extends ServerPlugin {
 
     }
 
-    
+
 
     /**
      * Generates the 'general' configuration section
@@ -225,7 +226,7 @@ class Plugin extends ServerPlugin {
       $configuredLogLevel = '';
       $logFilePath = '';
       if (isset($this->rawConfigs['general'])
-        && isset($this->rawConfigs['general']['logger']) 
+        && isset($this->rawConfigs['general']['logger'])
         && $this->rawConfigs['general']['logger']['enabled']) {
         $configuredLogLevel = $this->rawConfigs['general']['logger']['level'];
         $logFilePath = $this->rawConfigs['general']['logger']['file'];
@@ -307,4 +308,3 @@ class Plugin extends ServerPlugin {
 
     }
 }
-

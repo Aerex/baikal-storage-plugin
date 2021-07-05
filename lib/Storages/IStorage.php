@@ -11,4 +11,3 @@ interface IStorage {
  public function getConfigBrowser();
  public function updateConfigs($postData);
 }
-

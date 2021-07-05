@@ -14,7 +14,7 @@ class Taskwarrior implements IStorage {
   public function __construct($console, $configs, $logger) {
     $this->console = $console;
     $this->configs = $configs['storages']['taskwarrior'];
-    $this->logger = $logger; 
+    $this->logger = $logger;
   }
 
   public function getConfigBrowser() {
@@ -54,7 +54,7 @@ class Taskwarrior implements IStorage {
 
   public function refresh() {
     $this->logger->info('Syncing taskwarrior tasks...');
-    $this->console->execute('task', ['sync'], null, 
+    $this->console->execute('task', ['sync'], null,
       ['TASKRC' => $this->configs['taskrc'],'TASKDATA' => $this->configs['taskdata']]);
       $this->tasks = json_decode($this->console->execute('task', ['export'], null,
         ['TASKRC' => $this->configs['taskrc'], 'TASKDATA' => $this->configs['taskdata']]), true);
@@ -75,7 +75,7 @@ class Taskwarrior implements IStorage {
 
     if (isset($vtodo->SUMMARY)){
       $task['description'] = (string)$vtodo->SUMMARY;
-    } 
+    }
 
     if (isset($vtodo->DESCRIPTION)) {
       $annotations = [];
@@ -98,7 +98,7 @@ class Taskwarrior implements IStorage {
     }
     if (!isset($task['entry'])){
       $task['entry'] = $vtodo->DTSTAMP->getDateTime()->format(\DateTime::ISO8601);
-    } 
+    }
 
     if (isset($vtodo->DTSTART)) {
       $task['start'] = $vtodo->DTSTART->getDateTime()->format(\DateTime::ISO8601);
@@ -179,6 +179,7 @@ class Taskwarrior implements IStorage {
       if (!isset($c->VTODO)){
         throw new \Exception('Calendar event does not contain VTODO');
       }
+      $this->logger->info(sprintf('Executing on calendar %s', $displayname));
       $this->logger->info(json_encode($c->jsonSerialize()));
       $this->refresh();
       $task = $this->vObjectToTask($c->VTODO, $displayname);
@@ -186,7 +187,7 @@ class Taskwarrior implements IStorage {
       $this->logger->info(
         sprintf('Executing TASKRC = %s TASKDATA = %s task import %s', $this->configs['taskrc'], $this->configs['taskdata'], json_encode($task))
       );
-      $output = $this->console->execute('task', ['import'], $task, 
+      $output = $this->console->execute('task', ['import'], $task,
         ['TASKRC' => $this->configs['taskrc'],'TASKDATA' => $this->configs['taskdata']]);
       $this->refresh();
       $this->logger->info($output);
@@ -201,16 +202,17 @@ class Taskwarrior implements IStorage {
       $this->logger->info(sprintf('Deleting iCal %s from taskwarrior', $uid));
       $this->refresh();
       if (!array_key_exists((string)$uid, $this->tasks)) {
-        $this->logger->warn(sprintf('Could not find task %s to be remove. Skipping', (string)$uid)); 
+        $this->logger->warn(sprintf('Could not find task %s to be remove. Skipping', (string)$uid));
         return;
       }
       $task = $this->tasks[(string)$uid];
       if (isset($task) && $task['status'] !== 'deleted') {
+        $this->logger->info(sprintf('Deleting iCal %s from taskwarrior', $uid));
         $uuid = $task['uuid'];
         $this->logger->info(
-          sprintf('Executing TASKRC = %s TASKDATA = %s task delete %s', $this->configs['taskrc'], $this->configs['taskdata'], $uuid) 
+          sprintf('Executing TASKRC = %s TASKDATA = %s task delete %s', $this->configs['taskrc'], $this->configs['taskdata'], $uuid)
         );
-        $output = $this->console->execute('task', ['delete', (string)$uuid], null, 
+        $output = $this->console->execute('task', ['delete', (string)$uuid], null,
           ['TASKRC' => $this->configs['taskrc'],'TASKDATA' => $this->configs['taskdata']]);
         $this->logger->info($output);
         $this->refresh();
@@ -225,6 +227,5 @@ class Taskwarrior implements IStorage {
       $this->logger->error($e->getTraceAsString());
       throw $e;
     }
-
   }
 }
