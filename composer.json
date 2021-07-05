@@ -16,7 +16,7 @@
         }
     ],
     "bin": [
-      "bin/console"
+      "bin/baikalstorage"
     ],
     "require": {
         "php": ">=5.5",
