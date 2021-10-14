@@ -22,7 +22,12 @@ class CreateConfigFileCommand extends Command {
 
   public function addtaskwarriorConfig() {
     $configs = [];
-    $filePath = $this->io->askQuestion(new Question('Where is the location for the taskrc file?'));
+    $taskrcQuestion = new Question('Where is the location for the taskrc file?');
+    $self = $this;
+    $taskrcQuestion->setAutocompleterCallback(function(string $input)  use ($self) {
+      return $self->autocompleteFilePathCallback($input);
+    });
+    $filePath = $this->io->askQuestion($taskrcQuestion);
     $taskrcFilePath = $filePath . '/.taskrc';
     if (!file_exists($taskrcFilePath)) {
       throw new \RuntimeException("The taskrc file  at $taskrcFilePath does not exist");
@@ -70,7 +75,10 @@ class CreateConfigFileCommand extends Command {
 
     // TODO: move create config file code block to function
     $question = new Question('Where to create `config.yaml` configuration file?');
-    $question->setAutocompleterCallback($this->autocompleteFilePathCallback);
+    $self = $this;
+    $question->setAutocompleterCallback(function(string $input)  use ($self) {
+      return $self->autocompleteFilePathCallback($input);
+    });
     $filePath = $this->io->askQuestion($question);
 
     try {
@@ -125,7 +133,14 @@ class CreateConfigFileCommand extends Command {
     $this->configs['general'] = [];
     if ($this->io->confirm('Enable logging?')) {
       $this->configs['general']['logger'] = [];
-      $logFilePath = $this->io->askQuestion(new Question('Where to create log file?'));
+
+      $logFileQuestion = new Question('Where to create log file?');
+      $self = $this;
+      $logFileQuestion->setAutocompleterCallback(function(string $input)  use ($self) {
+        return $self->autocompleteFilePathCallback($input);
+      });
+      $logFilePath = $this->io->askQuestion($logFileQuestion);
+
       $this->configs['general']['logger']['file'] = $this->verifyAndCreateFile($logFilePath, CreateConfigFileCommand::$LOGGER_FILE_NAME);
 
       $logLevelChoiceQuestion = new ChoiceQuestion('Log level (defaults to ERROR)', array_keys(Monolog::getLevels()), 4);
