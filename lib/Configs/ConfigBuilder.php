@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Aerex\BaikalStorage\Configs;
 
@@ -21,9 +21,9 @@ class ConfigBuilder implements ConfigurationInterface {
   }
 
   public function getConfigTreeBuilder() {
-    $treeBuilder = new TreeBuilder();
-    $rootNode = $treeBuilder->root('configs');
-    $ref = $rootNode->children()
+    $treeBuilder = new TreeBuilder('configs', 'array');
+    $rootNode = $treeBuilder->getRootNode();
+    $ref =  $rootNode->children()
         ->arrayNode('general')
               ->children()
                 ->arrayNode('logger')
@@ -35,12 +35,12 @@ class ConfigBuilder implements ConfigurationInterface {
                       ->validate()
                         ->IfNotInArray(['DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'])
                         ->thenInvalid('Invalid log level %s')
-                      ->end() 
-                    ->end() 
-                  ->end() 
-                ->end() 
-               ->end() 
-              ->end() 
+                      ->end()
+                    ->end()
+                  ->end()
+                ->end()
+               ->end()
+              ->end()
             ->arrayNode('storages')
                 ->children();
     foreach ($this->configs as $config) {
