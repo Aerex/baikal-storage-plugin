@@ -146,7 +146,7 @@ class Plugin extends ServerPlugin {
       } catch(BadRequest $e){
           throw new BadRequest($e->getMessage(), null, $e);
       } catch(\Exception $e){
-          throw new \Exception($e->getMessage(), null, $e);
+          throw $e;
       }
 
       $request->setBody($body);
@@ -209,7 +209,7 @@ class Plugin extends ServerPlugin {
       } catch(BadRequest $e){
         throw new BadRequest($e->getMessage(), null, $e);
       } catch(\Exception $e){
-        throw new \Exception($e->getMessage(), null, $e);
+        throw $e;
       }
       $request->setBody($body);
 
