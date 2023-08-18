@@ -10,6 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 class ConfigBuilder implements ConfigurationInterface {
   private $configs = [];
   private $configFile;
+  private $processor;
 
   public function __construct($configFile) {
     $this->configFile = $configFile;
