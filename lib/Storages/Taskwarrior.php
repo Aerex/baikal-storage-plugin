@@ -10,6 +10,7 @@ class Taskwarrior implements IStorage {
   private $tasks = [];
   private $configs;
   private $logger;
+  private $console;
 
   public function __construct($console, $configs, $logger) {
     $this->console = $console;
@@ -56,8 +57,10 @@ class Taskwarrior implements IStorage {
     $this->logger->info('Syncing taskwarrior tasks...');
     $this->console->execute('task', ['sync'], null,
       ['TASKRC' => $this->configs['taskrc'],'TASKDATA' => $this->configs['taskdata']]);
-      $this->tasks = json_decode($this->console->execute('task', ['export'], null,
-        ['TASKRC' => $this->configs['taskrc'], 'TASKDATA' => $this->configs['taskdata']]), true);
+    $out = $this->console->execute('task', ['export'], null,
+        ['TASKRC' => $this->configs['taskrc'], 'TASKDATA' => $this->configs['taskdata']]);
+      $this->logger->info('out ' . $out);
+      $this->tasks = json_decode($out, true);
       foreach ($this->tasks as $task) {
         if (isset($task['uid'])) {
           $this->tasks[$task['uid']] = $task;
