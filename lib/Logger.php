@@ -7,6 +7,7 @@ use Monolog\Handler\StreamHandler;
 class Logger {
 
   private $configs = ['enabled' => false];
+  private $logger;
 
   function __construct($configs, $tag) {
     if (isset($configs['general']) && isset($configs['general']['logger'])) {

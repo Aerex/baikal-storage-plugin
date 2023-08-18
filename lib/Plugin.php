@@ -39,6 +39,16 @@ class Plugin extends ServerPlugin {
     protected $rawConfigs;
 
     /**
+     * @var $config
+     */
+    protected $config;
+
+    /**
+     * @var $logger
+     */
+    protected $logger;
+
+    /**
      * Creates the Storage plugin
      *
      * @param CalendarProcessor $TWCalManager
@@ -46,8 +56,8 @@ class Plugin extends ServerPlugin {
      */
     function __construct($configFile){
       $this->rawConfigs = $this->buildConfigurations($configFile);
-      $this->storageManager = new StorageManager($this->rawConfigs);
       $this->logger = new Logger($this->rawConfigs, 'BaikalStorage');
+      $this->storageManager = new StorageManager($this->rawConfigs);
       $this->initializeStorages($this->rawConfigs);
     }
 
@@ -142,7 +152,9 @@ class Plugin extends ServerPlugin {
       try {
         if (!$this->storageManager->fromStorageSource($vCal)) {
           $this->storageManager->import($vCal, $displayname);
-        }
+      } else {
+        $this->logger->info('Skipping import');
+      }
       } catch(BadRequest $e){
           throw new BadRequest($e->getMessage(), null, $e);
       } catch(\Exception $e){
